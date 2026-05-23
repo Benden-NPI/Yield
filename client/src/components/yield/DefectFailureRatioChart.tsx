@@ -69,40 +69,80 @@ export const DefectFailureRatioChart: React.FC = () => {
             <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 8 }} />
             <ReferenceLine y={cap} stroke="#ff4d4f" strokeDasharray="4 4"
               label={{ value: `Cap ${cap}%`, position: 'right', fill: '#ff4d4f', fontSize: 11 }} />
-            {allPns.map((pn, idx) => (
-              <Bar key={pn} dataKey={pn} name={pn} fill={pickBlue(idx)} maxBarSize={48}>
-                <LabelList
+            {allPns.map((pn, idx) => {
+              const fill = pickBlue(idx);
+              return (
+                <Bar
+                  key={pn}
                   dataKey={pn}
-                  position="top"
-                  content={(props) => {
-                    // Use a custom renderer so 0% labels are still drawn
-                    // (Recharts' default LabelList can drop labels for zero-
-                    // height bars when relying on `position="top"` alone).
+                  name={pn}
+                  fill={fill}
+                  maxBarSize={48}
+                  // A custom `shape` is required so Recharts v3 does NOT filter
+                  // out zero-dimension rectangles. Without it, 0% bars are
+                  // removed from the LabelList data array entirely and the
+                  // `0%` label is never rendered.
+                  shape={(props: unknown) => {
                     const p = props as {
                       x?: number; y?: number; width?: number; height?: number;
-                      value?: number | string | null;
+                      fill?: string;
                     };
-                    const v = p.value;
-                    if (v == null || v === '') return null;
-                    const x = (p.x ?? 0) + (p.width ?? 0) / 2;
-                    // For zero-height bars, y is at the baseline; nudge label
-                    // up so it stays visible above the x-axis line.
-                    const y = (p.y ?? 0) - 6;
+                    const x = p.x ?? 0;
+                    const y = p.y ?? 0;
+                    const width = p.width ?? 0;
+                    const height = p.height ?? 0;
+                    if (height <= 0) {
+                      // Draw a 2px tall marker bar sitting on the baseline so
+                      // a 0% PN is still visually present, not just labelled.
+                      return (
+                        <rect
+                          x={x}
+                          y={y - 2}
+                          width={width}
+                          height={2}
+                          fill={p.fill ?? fill}
+                        />
+                      );
+                    }
                     return (
-                      <text
-                        x={x}
-                        y={y}
-                        textAnchor="middle"
-                        fontSize={11}
-                        fill="#555"
-                      >
-                        {`${v}%`}
-                      </text>
+                      <rect x={x} y={y} width={width} height={height} fill={p.fill ?? fill} />
                     );
                   }}
-                />
-              </Bar>
-            ))}
+                >
+                  <LabelList
+                    dataKey={pn}
+                    position="top"
+                    content={(props) => {
+                      // Use a custom renderer so 0% labels are still drawn
+                      // (Recharts' default LabelList can drop labels for
+                      // zero-height bars when relying on `position="top"`
+                      // alone).
+                      const p = props as {
+                        x?: number; y?: number; width?: number; height?: number;
+                        value?: number | string | null;
+                      };
+                      const v = p.value;
+                      if (v == null || v === '') return null;
+                      const x = (p.x ?? 0) + (p.width ?? 0) / 2;
+                      // For zero-height bars, y is at the baseline; nudge
+                      // label up so it stays visible above the x-axis line.
+                      const y = (p.y ?? 0) - 6;
+                      return (
+                        <text
+                          x={x}
+                          y={y}
+                          textAnchor="middle"
+                          fontSize={11}
+                          fill="#555"
+                        >
+                          {`${v}%`}
+                        </text>
+                      );
+                    }}
+                  />
+                </Bar>
+              );
+            })}
           </BarChart>
         </ResponsiveContainer>
       )}
