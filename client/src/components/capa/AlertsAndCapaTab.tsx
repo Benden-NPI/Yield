@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Card, Row, Col, Table, Tag, Button, Modal, Form, Input, Select, DatePicker,
-  Space, Popconfirm, Typography, Empty, Segmented,
+  Space, Popconfirm, Typography, Empty, Segmented, message,
 } from 'antd';
 import type { ColumnType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, AlertOutlined, ToolOutlined } from '@ant-design/icons';
+import {
+  PlusOutlined, EditOutlined, DeleteOutlined, AlertOutlined, ToolOutlined,
+  DownloadOutlined, UploadOutlined,
+} from '@ant-design/icons';
 import { useAlerts } from '../../hooks/useAlerts';
 import type { AlertItem } from '../../hooks/useAlerts';
 import { useCapaStore } from '../../hooks/useCapa';
@@ -87,6 +90,102 @@ export const AlertsAndCapaTab: React.FC = () => {
     setEditingId(c.id);
     setModalOpen(true);
   };
+
+  // ----- Export / Import CAPA as JSON ---------------------------------------
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleExport = () => {
+    try {
+      const payload = {
+        type: 'yield-capa-export',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        items: capa.items,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: 'application/json;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const ts = dayjs().format('YYYYMMDD-HHmmss');
+      a.href = url;
+      a.download = `yield-capa-${ts}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      message.success(`已匯出 ${capa.items.length} 筆 CAPA`);
+    } catch (err) {
+      message.error(`匯出失敗：${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset the input so picking the same file twice in a row still fires onChange.
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed: unknown = JSON.parse(text);
+      // Accept either a bare array of items, or our export envelope `{ items: [...] }`.
+      let items: Array<Partial<CapaItem>>;
+      if (Array.isArray(parsed)) {
+        items = parsed as Array<Partial<CapaItem>>;
+      } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { items?: unknown }).items)) {
+        items = (parsed as { items: Array<Partial<CapaItem>> }).items;
+      } else {
+        throw new Error('JSON 不是 CAPA 陣列，也不是 { items: [...] } 結構');
+      }
+      if (items.length === 0) {
+        message.warning('檔案內沒有任何 CAPA');
+        return;
+      }
+      Modal.confirm({
+        title: `匯入 ${items.length} 筆 CAPA`,
+        content: (
+          <div>
+            <p>請選擇匯入方式：</p>
+            <ul style={{ paddingLeft: 18, margin: 0 }}>
+              <li><b>合併（Merge）</b>：依 <code>id</code> 比對，相同 id 覆寫、新 id 新增。</li>
+              <li><b>覆寫（Replace）</b>：清掉現有 {capa.items.length} 筆，整批換成檔案內容。</li>
+            </ul>
+          </div>
+        ),
+        okText: '合併',
+        cancelText: '取消',
+        okButtonProps: { type: 'primary' },
+        // Use the secondary "footer extra" via a custom footer.
+        footer: (_, { OkBtn, CancelBtn }) => (
+          <Space>
+            <CancelBtn />
+            <Button
+              danger
+              onClick={() => {
+                const count = capa.replaceAll(items);
+                message.success(`已覆寫，現有 ${count} 筆 CAPA`);
+                Modal.destroyAll();
+              }}
+            >
+              覆寫
+            </Button>
+            <OkBtn />
+          </Space>
+        ),
+        onOk: () => {
+          const { added, updated } = capa.mergeImport(items);
+          message.success(`已合併：新增 ${added} 筆、更新 ${updated} 筆`);
+        },
+      });
+    } catch (err) {
+      message.error(`匯入失敗：${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  // -------------------------------------------------------------------------
 
   const handleOk = async () => {
     try {
@@ -223,7 +322,7 @@ export const AlertsAndCapaTab: React.FC = () => {
             style={{ borderColor: '#e6efff' }}
             styles={{ body: { padding: '12px 16px' } }}
             extra={
-              <Space>
+              <Space wrap>
                 <Segmented
                   size="small"
                   value={statusFilter}
@@ -234,6 +333,28 @@ export const AlertsAndCapaTab: React.FC = () => {
                     { label: 'In Progress', value: 'in_progress' },
                     { label: 'Closed', value: 'closed' },
                   ]}
+                />
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={handleExport}
+                  disabled={capa.items.length === 0}
+                  title="把現有所有 CAPA 匯出成 JSON 檔"
+                >
+                  匯出 JSON
+                </Button>
+                <Button
+                  icon={<UploadOutlined />}
+                  onClick={handleImportClick}
+                  title="從 JSON 檔匯入 CAPA（可合併或覆寫）"
+                >
+                  匯入 JSON
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  style={{ display: 'none' }}
+                  onChange={handleImportFile}
                 />
                 <Button type="primary" icon={<PlusOutlined />} onClick={openManualAdd}>Add CAPA</Button>
               </Space>
