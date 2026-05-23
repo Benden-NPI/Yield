@@ -5,7 +5,6 @@ import { FilterPanel } from './components/FilterPanel';
 import { YieldInputTable } from './components/YieldInputTable';
 import { YieldChart } from './components/YieldChart';
 import { ExportButton } from './components/ExportButton';
-import './App.css';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
