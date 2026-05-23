@@ -6,8 +6,18 @@ const { readAll, addRecord, updateRecord, deleteRecord, buildReport } = require(
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT_DIR = path.resolve(__dirname, "..");
-const PUBLIC_DIR = path.join(ROOT_DIR, "public");
+const CLIENT_DIST_DIR = path.join(ROOT_DIR, "client", "dist");
+const LEGACY_PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const WORK_ITEM_DIR = path.join(ROOT_DIR, "docs", "work-items");
+
+async function pathExists(p) {
+  try {
+    const stat = await fs.stat(p);
+    return stat.isFile();
+  } catch {
+    return false;
+  }
+}
 
 function contentType(filePath) {
   if (filePath.endsWith(".html")) return "text/html; charset=utf-8";
@@ -46,22 +56,38 @@ async function readWorkItems() {
 async function serveStatic(req, res) {
   const pathname = req.url === "/" ? "/index.html" : req.url;
   const safePath = path.normalize(pathname).replace(/^(\.\.[/\\])+/, "");
-  const filePath = path.join(PUBLIC_DIR, safePath);
 
-  try {
-    const stat = await fs.stat(filePath);
-    if (!stat.isFile()) {
-      res.writeHead(404);
-      res.end("Not found");
-      return;
-    }
-    const data = await fs.readFile(filePath);
-    res.writeHead(200, { "Content-Type": contentType(filePath) });
+  // 1. Prefer the React build output (client/dist) so the SPA is served on this port.
+  const distCandidate = path.join(CLIENT_DIST_DIR, safePath);
+  if (await pathExists(distCandidate)) {
+    const data = await fs.readFile(distCandidate);
+    res.writeHead(200, { "Content-Type": contentType(distCandidate) });
     res.end(data);
-  } catch {
-    res.writeHead(404);
-    res.end("Not found");
+    return;
   }
+
+  // 2. Fall back to the legacy static files in public/ (e.g. old yield.html / work-items board).
+  const legacyCandidate = path.join(LEGACY_PUBLIC_DIR, safePath);
+  if (await pathExists(legacyCandidate)) {
+    const data = await fs.readFile(legacyCandidate);
+    res.writeHead(200, { "Content-Type": contentType(legacyCandidate) });
+    res.end(data);
+    return;
+  }
+
+  // 3. SPA fallback: for non-asset GET requests, return the React index.html so client-side
+  //    routing keeps working. Only fall back for paths without a file extension.
+  const hasExtension = path.extname(safePath) !== "";
+  const reactIndex = path.join(CLIENT_DIST_DIR, "index.html");
+  if (!hasExtension && (await pathExists(reactIndex))) {
+    const data = await fs.readFile(reactIndex);
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(data);
+    return;
+  }
+
+  res.writeHead(404);
+  res.end("Not found");
 }
 
 function jsonResponse(res, status, data) {
@@ -184,7 +210,15 @@ const server = http.createServer(async (req, res) => {
   await serveStatic(req, res);
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
+  const hasDist = await pathExists(path.join(CLIENT_DIST_DIR, "index.html"));
   // eslint-disable-next-line no-console
   console.log(`Interface example running at http://localhost:${PORT}`);
+  if (!hasDist) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[warn] client/dist/index.html not found. Run "npm run build:client" first to serve the React app. ` +
+        `Falling back to legacy files in public/.`
+    );
+  }
 });
