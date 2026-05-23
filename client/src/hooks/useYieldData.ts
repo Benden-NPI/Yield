@@ -119,6 +119,7 @@ interface YieldStore {
   addRecord: (record: Omit<YieldRecord, 'id'>) => void;
   updateRecord: (id: string, updates: Partial<Omit<YieldRecord, 'id'>>) => void;
   deleteRecord: (id: string) => void;
+  replaceRecords: (records: Array<Partial<YieldRecord>>) => void;
   setFilter: (filter: Partial<FilterState>) => void;
   clearFilter: () => void;
   filteredRecords: () => YieldRecord[];
@@ -152,6 +153,12 @@ export const useYieldStore = create<YieldStore>((set, get) => {
 
     deleteRecord: (id) => {
       const records = get().records.filter((r) => r.id !== id);
+      saveToStorage(records);
+      set({ records, lastUpdatedAt: bumpUpdatedAt() });
+    },
+
+    replaceRecords: (incoming) => {
+      const records = incoming.map((r) => normalizeRecord(r as StoredRecord));
       saveToStorage(records);
       set({ records, lastUpdatedAt: bumpUpdatedAt() });
     },

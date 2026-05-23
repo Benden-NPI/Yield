@@ -1,15 +1,18 @@
 import React from 'react';
-import { Card, Form, InputNumber, Switch, Button, Row, Col, Divider, Typography, Space, Popconfirm } from 'antd';
-import { SettingOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Card, Form, InputNumber, Switch, Button, Row, Col, Divider, Typography, Space, Popconfirm, Input, message, Alert } from 'antd';
+import { SettingOutlined, ReloadOutlined, CloudDownloadOutlined } from '@ant-design/icons';
 import { useSettingsStore, DEFAULT_SETTINGS } from '../../hooks/useSettings';
 import type { SettingsState } from '../../hooks/useSettings';
 import { METRIC_LABELS, METRIC_UNITS, YIELD_METRICS } from '../../types/yield';
+import { useSharePointSync, getStoredWebhookUrl, setStoredWebhookUrl } from '../../hooks/useSharePointSync';
 
 const { Title, Text } = Typography;
 
 export const SettingsTab: React.FC = () => {
   const settings = useSettingsStore();
   const [form] = Form.useForm<SettingsState>();
+  const { sync, syncing, lastSyncAt, lastError } = useSharePointSync();
+  const [webhookUrl, setWebhookUrl] = React.useState<string>(() => getStoredWebhookUrl());
 
   React.useEffect(() => {
     form.setFieldsValue(settings);
@@ -25,16 +28,87 @@ export const SettingsTab: React.FC = () => {
     form.setFieldsValue(DEFAULT_SETTINGS);
   };
 
-  return (
-    <Card
-      title={<><SettingOutlined style={{ color: '#1677ff' }} /> Targets / Specs / Alert Rules</>}
-      style={{ borderColor: '#e6efff' }}
-      extra={
-        <Popconfirm title="Reset to defaults?" onConfirm={reset}>
-          <Button icon={<ReloadOutlined />} size="small">Reset to defaults</Button>
-        </Popconfirm>
+  const handleSaveUrl = () => {
+    setStoredWebhookUrl(webhookUrl.trim());
+    message.success('Webhook URL 已儲存');
+  };
+
+  const handleSync = async () => {
+    try {
+      // Persist any unsaved URL edit before syncing.
+      setStoredWebhookUrl(webhookUrl.trim());
+      const result = await sync(webhookUrl.trim());
+      if (result.missingMonth > 0) {
+        message.warning(`已載入 ${result.count} 筆；其中 ${result.missingMonth} 筆缺少 Date 欄位，將不會出現在月份趨勢圖`);
+      } else {
+        message.success(`已從 SharePoint 載入 ${result.count} 筆資料`);
       }
-    >
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      message.error(`同步失敗：${msg}`);
+    }
+  };
+
+  return (
+    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      <Card
+        title={<><CloudDownloadOutlined style={{ color: '#1677ff' }} /> SharePoint 同步（只讀）</>}
+        style={{ borderColor: '#e6efff' }}
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="從 Power Automate Webhook 載入 SharePoint 表格資料"
+          description={
+            <div style={{ fontSize: 12 }}>
+              <div>• 按下「從 SharePoint 同步」會 <b>覆寫</b> 本機 records（localStorage）。</div>
+              <div>• Webhook URL 只存在這台瀏覽器的 localStorage，<b>不會 commit 進 source code</b>。</div>
+              <div>• SharePoint 表格需要包含 <code>Date</code> 欄位（yyyy-mm-dd），系統會自動轉成月份。沒有 Date 的列不會出現在月份趨勢圖。</div>
+            </div>
+          }
+          style={{ marginBottom: 12 }}
+        />
+        <Row gutter={8}>
+          <Col flex="auto">
+            <Input.Password
+              placeholder="貼上 Power Automate HTTP trigger URL（含 sig=...）"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              autoComplete="off"
+              visibilityToggle
+            />
+          </Col>
+          <Col>
+            <Space>
+              <Button onClick={handleSaveUrl}>儲存 URL</Button>
+              <Popconfirm
+                title="從 SharePoint 同步會覆寫本機資料，確定繼續？"
+                onConfirm={handleSync}
+                okText="同步"
+                cancelText="取消"
+              >
+                <Button type="primary" icon={<CloudDownloadOutlined />} loading={syncing} disabled={!webhookUrl.trim()}>
+                  從 SharePoint 同步
+                </Button>
+              </Popconfirm>
+            </Space>
+          </Col>
+        </Row>
+        <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
+          {lastSyncAt && <span>最後同步：{new Date(lastSyncAt).toLocaleString()} </span>}
+          {lastError && <span style={{ color: '#cf1322' }}>錯誤：{lastError}</span>}
+        </div>
+      </Card>
+
+      <Card
+        title={<><SettingOutlined style={{ color: '#1677ff' }} /> Targets / Specs / Alert Rules</>}
+        style={{ borderColor: '#e6efff' }}
+        extra={
+          <Popconfirm title="Reset to defaults?" onConfirm={reset}>
+            <Button icon={<ReloadOutlined />} size="small">Reset to defaults</Button>
+          </Popconfirm>
+        }
+      >
       <Form
         form={form}
         layout="vertical"
@@ -155,6 +229,7 @@ export const SettingsTab: React.FC = () => {
           </Text>
         </Space>
       </Form>
-    </Card>
+      </Card>
+    </Space>
   );
 };
