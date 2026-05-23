@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import type { RefObject } from 'react';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
+import { message } from 'antd';
 
 /**
  * Captures the DOM subtree referenced by `targetRef` and saves it as a
@@ -88,6 +89,12 @@ export function usePdfExport(
 
       const ts = new Date().toISOString().slice(0, 10);
       pdf.save(`${baseFileName}-${ts}.pdf`);
+      message.success(`PDF saved: ${baseFileName}-${ts}.pdf`);
+    } catch (err) {
+      // Surface failures (e.g. unsupported CSS color, tainted canvas) instead
+      // of silently producing nothing.
+      console.error('PDF export failed:', err);
+      message.error(`PDF export failed: ${(err as Error)?.message ?? 'unknown error'}`);
     } finally {
       setIsExporting(false);
     }
