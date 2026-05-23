@@ -74,7 +74,7 @@ export const DistributionPanel: React.FC = () => {
   return (
     <ChartCard
       title="Distribution / Histogram"
-      info="量測值分布直方圖 + 五數摘要；可顯示 USL/LSL 規格界線參考。"
+      info="Measurement distribution histogram + five-number summary, with optional USL/LSL Spec reference lines."
       extra={
         <Space>
           <Select size="small" value={pn} onChange={setPn} style={{ width: 150 }}
@@ -91,7 +91,7 @@ export const DistributionPanel: React.FC = () => {
       }
     >
       {values.length === 0 ? (
-        <EmptyHint text="尚無量測資料" height={260} />
+        <EmptyHint text="No measurement data yet" height={260} />
       ) : (
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 480px', minWidth: 320 }}>

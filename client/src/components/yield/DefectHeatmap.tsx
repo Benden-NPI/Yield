@@ -34,8 +34,8 @@ export const DefectHeatmap: React.FC = () => {
   return (
     <ChartCard
       title="PN × Defect Heatmap"
-      subtitle="找出問題集中點"
-      info="顏色越深代表該 PN 在該 Defect 的失效率越高 (defect / input %)。"
+      subtitle="Find problem concentration points"
+      info="Darker color means a higher failure ratio for that PN and Defect (defect / input %)."
     >
       {pns.length === 0 ? (
         <EmptyHint height={200} />
@@ -81,13 +81,13 @@ export const DefectHeatmap: React.FC = () => {
             </tbody>
           </table>
           <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Text type="secondary" style={{ fontSize: 11 }}>低</Text>
+            <Text type="secondary" style={{ fontSize: 11 }}>Low</Text>
             <div style={{ display: 'flex', gap: 2 }}>
               {['#e6f4ff', '#bae0ff', '#91caff', '#69b1ff', '#4096ff', '#1677ff', '#0958d9', '#003a8c'].map((c) => (
                 <div key={c} style={{ width: 18, height: 12, background: c, borderRadius: 2 }} />
               ))}
             </div>
-            <Text type="secondary" style={{ fontSize: 11 }}>高 (~{maxRatio.toFixed(1)}%)</Text>
+            <Text type="secondary" style={{ fontSize: 11 }}>High (~{maxRatio.toFixed(1)}%)</Text>
           </div>
         </div>
       )}

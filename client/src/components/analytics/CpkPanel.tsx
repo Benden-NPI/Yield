@@ -93,10 +93,10 @@ export const CpkPanel: React.FC = () => {
   return (
     <ChartCard
       title="Process Capability (Cp / Cpk)"
-      info="使用 Settings 設定的 USL/LSL 與整體樣本標準差計算。Cpk≥1.33 視為製程足夠；<1.0 為不足。"
+      info="Calculated using USL/LSL from Settings and overall sample standard deviation. Cpk >= 1.33 indicates a capable process; < 1.0 is insufficient."
     >
       {rows.length === 0 ? (
-        <EmptyHint text="尚無量測資料，請先到 Data Entry → 量測資料 新增。" height={200} />
+        <EmptyHint text="No measurement data yet. Add Measurement Data in Data Entry first." height={200} />
       ) : (
         <Table size="small" rowKey="key" dataSource={rows} columns={columns} pagination={false} />
       )}

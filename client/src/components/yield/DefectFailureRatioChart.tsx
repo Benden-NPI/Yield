@@ -43,7 +43,7 @@ export const DefectFailureRatioChart: React.FC = () => {
   return (
     <ChartCard
       title={`Defect Failure Ratio by ${METRIC_LABELS[metric]}`}
-      info="計算公式：defect count ÷ input。紅虛線=設定的單一缺陷上限 (Settings)。"
+      info="Formula: defect count / input. Red dashed line = per-defect cap from Settings."
       extra={
         <Radio.Group
           value={metric}

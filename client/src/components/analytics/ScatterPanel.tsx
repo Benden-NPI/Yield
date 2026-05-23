@@ -65,7 +65,7 @@ export const ScatterPanel: React.FC = () => {
   return (
     <ChartCard
       title="Scatter / Correlation"
-      info="挑兩個量測指標，觀察兩兩相關性；點按 PN 著色。Pearson r：±1 強相關、0 無相關。"
+      info="Select two measurement metrics to compare correlation. Click a PN to color by PN. Pearson r: +/-1 = strong correlation, 0 = no correlation."
       extra={
         <Space>
           <Select size="small" value={x} onChange={setX} style={{ width: 140 }}
@@ -76,7 +76,7 @@ export const ScatterPanel: React.FC = () => {
       }
     >
       {totalN < 2 ? (
-        <EmptyHint text="量測資料不足（至少需要 2 點同時有 X 和 Y）。" height={280} />
+        <EmptyHint text="Insufficient measurement data (at least 2 points with both X and Y are required)." height={280} />
       ) : (
         <>
           <ResponsiveContainer width="100%" height={320}>

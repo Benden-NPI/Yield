@@ -143,7 +143,7 @@ export const MeasurementInputTable: React.FC = () => {
       render: (_, r) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(r)} size="small" />
-          <Popconfirm title="確定刪除？" onConfirm={() => remove(r.id)} okText="刪除" cancelText="取消">
+          <Popconfirm title="Delete this item?" onConfirm={() => remove(r.id)} okText="Delete" cancelText="Cancel">
             <Button type="link" icon={<DeleteOutlined />} danger size="small" />
           </Popconfirm>
         </Space>
@@ -156,13 +156,13 @@ export const MeasurementInputTable: React.FC = () => {
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <Text strong style={{ fontSize: 16, color: '#003a8c' }}>
-            Measurements <Tag color="blue">{items.length} 筆</Tag>
+            Measurements <Tag color="blue">{items.length} records</Tag>
           </Text>
           <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-            Process Analytics 的 SPC / Cpk / Scatter 圖表會使用這份逐片量測值。
+            SPC / Cpk / Scatter charts in Process Analytics use this piece-level measurement dataset.
           </div>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>新增量測</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>Add Measurement</Button>
       </div>
 
       <Table
@@ -172,28 +172,28 @@ export const MeasurementInputTable: React.FC = () => {
         bordered
         size="middle"
         scroll={{ x: 1180 }}
-        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 筆` }}
+        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `Total ${t} records` }}
       />
 
       <Modal
-        title={editingId ? '編輯量測' : '新增量測'}
+        title={editingId ? 'Edit Measurement' : 'Add Measurement'}
         open={modalOpen}
         onOk={handleOk}
         onCancel={() => setModalOpen(false)}
-        okText="儲存"
-        cancelText="取消"
+        okText="Save"
+        cancelText="Cancel"
         destroyOnClose
         width={720}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Row gutter={12}>
             <Col span={12}>
-              <Form.Item name="date" label="Date" rules={[{ required: true, message: '請輸入量測日期' }]}>
+              <Form.Item name="date" label="Date" rules={[{ required: true, message: 'Enter the measurement date' }]}>
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="pn" label="PN" rules={[{ required: true, message: '請選擇料號' }]}>
+              <Form.Item name="pn" label="PN" rules={[{ required: true, message: 'Select a PN' }]}>
                 <Select
                   options={KNOWN_PNS.map((p) => ({ label: p, value: p }))}
                   showSearch
@@ -234,7 +234,7 @@ export const MeasurementInputTable: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="failModes" label="Fail Modes (若 FAIL 才需填)">
+              <Form.Item name="failModes" label="Fail Modes (required for FAIL only)">
                 <Select mode="multiple" allowClear
                   options={YIELD_METRICS.map((m) => ({ label: METRIC_LABELS[m], value: m }))} />
               </Form.Item>

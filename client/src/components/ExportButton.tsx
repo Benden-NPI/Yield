@@ -9,7 +9,7 @@ export const ExportButton: React.FC = () => {
   const count = useFilteredRecords().length;
 
   return (
-    <Tooltip title={count === 0 ? '無資料可匯出' : `匯出 ${count} 筆資料`}>
+    <Tooltip title={count === 0 ? 'No data to export' : `Export ${count} records`}>
       <Button
         type="primary"
         icon={<FileExcelOutlined />}
@@ -17,7 +17,7 @@ export const ExportButton: React.FC = () => {
         disabled={count === 0}
         style={{ background: count > 0 ? '#217346' : undefined, borderColor: count > 0 ? '#217346' : undefined }}
       >
-        匯出 Excel
+        Export Excel
       </Button>
     </Tooltip>
   );

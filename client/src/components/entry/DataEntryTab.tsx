@@ -12,12 +12,12 @@ export const DataEntryTab: React.FC = () => {
         items={[
           {
             key: 'yield',
-            label: <span><TableOutlined /> 月度良率資料</span>,
+            label: <span><TableOutlined /> Monthly Yield Data</span>,
             children: <YieldInputTable />,
           },
           {
             key: 'meas',
-            label: <span><ExperimentOutlined /> 量測資料 (Process Analytics 用)</span>,
+            label: <span><ExperimentOutlined /> Measurement Data (for Process Analytics)</span>,
             children: <MeasurementInputTable />,
           },
         ]}
