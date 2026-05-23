@@ -3,14 +3,14 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer,
 } from 'recharts';
-import { useYieldStore, aggregateByMonth } from '../../hooks/useYieldData';
+import { aggregateByMonth, useFilteredRecords } from '../../hooks/useYieldData';
 import { METRIC_LABELS, YIELD_METRICS } from '../../types/yield';
 import { DEFECT_BLUE } from '../../utils/colors';
 import { ChartCard } from '../common/ChartCard';
 import { EmptyHint } from '../common/EmptyHint';
 
 export const DefectComposition: React.FC = () => {
-  const records = useYieldStore((s) => s.filteredRecords());
+  const records = useFilteredRecords();
 
   const data = useMemo(() => {
     const monthly = aggregateByMonth(records);

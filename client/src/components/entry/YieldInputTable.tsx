@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import type { ColumnType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useYieldStore, computeYieldFromLoss, computeThroughYield } from '../../hooks/useYieldData';
+import { useYieldStore, computeYieldFromLoss, computeThroughYield, useFilteredRecords } from '../../hooks/useYieldData';
 import type { YieldRecord, Shift } from '../../types/yield';
 import { MONTHS, KNOWN_PNS } from '../../types/yield';
 import dayjs, { Dayjs } from 'dayjs';
@@ -42,7 +42,7 @@ function renderTyTag(value: number | null): React.ReactNode {
 
 export const YieldInputTable: React.FC = () => {
   const { addRecord, updateRecord, deleteRecord } = useYieldStore();
-  const records = useYieldStore((s) => s.filteredRecords());
+  const records = useFilteredRecords();
   const [form] = Form.useForm<FormValues>();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

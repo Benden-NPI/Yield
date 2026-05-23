@@ -3,13 +3,13 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, Legend, ResponsiveContainer,
 } from 'recharts';
-import { useYieldStore, aggregateByMonth } from '../../hooks/useYieldData';
+import { aggregateByMonth, useFilteredRecords } from '../../hooks/useYieldData';
 import { useSettingsStore } from '../../hooks/useSettings';
 import { ChartCard } from '../common/ChartCard';
 import { EmptyHint } from '../common/EmptyHint';
 
 export const ThroughYieldTrend: React.FC = () => {
-  const records = useYieldStore((s) => s.filteredRecords());
+  const records = useFilteredRecords();
   const { throughYield } = useSettingsStore();
 
   const data = useMemo(() => aggregateByMonth(records).map((m) => ({

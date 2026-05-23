@@ -3,13 +3,13 @@ import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer, LabelList,
 } from 'recharts';
-import { useYieldStore, paretoByDefect } from '../../hooks/useYieldData';
+import { paretoByDefect, useFilteredRecords } from '../../hooks/useYieldData';
 import { METRIC_LABELS } from '../../types/yield';
 import { ChartCard } from '../common/ChartCard';
 import { EmptyHint } from '../common/EmptyHint';
 
 export const ParetoChart: React.FC = () => {
-  const records = useYieldStore((s) => s.filteredRecords());
+  const records = useFilteredRecords();
   const data = useMemo(() => paretoByDefect(records).map((row) => ({
     name: METRIC_LABELS[row.metric],
     count: row.count,

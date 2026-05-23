@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Typography } from 'antd';
-import { useYieldStore, heatmapPnByDefect } from '../../hooks/useYieldData';
+import { heatmapPnByDefect, useFilteredRecords } from '../../hooks/useYieldData';
 import { METRIC_LABELS, YIELD_METRICS } from '../../types/yield';
 import { ChartCard } from '../common/ChartCard';
 import { EmptyHint } from '../common/EmptyHint';
@@ -20,7 +20,7 @@ function blueShade(ratio: number | null, max: number): { bg: string; fg: string 
 }
 
 export const DefectHeatmap: React.FC = () => {
-  const records = useYieldStore((s) => s.filteredRecords());
+  const records = useFilteredRecords();
   const { pns, cells } = useMemo(() => heatmapPnByDefect(records), [records]);
 
   const maxRatio = useMemo(() => {
