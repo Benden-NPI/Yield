@@ -30,7 +30,7 @@ export const DefectComposition: React.FC = () => {
   return (
     <ChartCard
       title="Defect Composition (100% Stacked, by Month)"
-      info="顯示每月四種缺陷的相對占比，幫助觀察失效結構是否改變。"
+      info="Shows the monthly mix of four Defects to reveal shifts in the failure structure."
     >
       {data.length === 0 ? (
         <EmptyHint height={300} />

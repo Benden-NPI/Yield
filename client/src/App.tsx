@@ -50,7 +50,7 @@ const App: React.FC = () => {
           <Space size={12} align="center">
             <BarChartOutlined style={{ color: '#69b1ff', fontSize: 24 }} />
             <Title level={4} style={{ color: '#fff', margin: 0 }}>
-              良率管理系統
+              Yield Management System
             </Title>
             <Tag color="blue" style={{ fontWeight: 600 }}>{APP_NAME} {APP_VERSION}</Tag>
           </Space>
@@ -80,7 +80,7 @@ const App: React.FC = () => {
         </Content>
 
         <Footer style={{ textAlign: 'center', color: '#8c8c8c', background: 'transparent' }}>
-          {APP_NAME} {APP_VERSION} · 資料儲存於本機 localStorage · © Benden NPI
+          {APP_NAME} {APP_VERSION} · Data stored in localStorage · © Benden NPI
         </Footer>
       </Layout>
     </ConfigProvider>

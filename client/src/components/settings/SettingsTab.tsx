@@ -27,10 +27,10 @@ export const SettingsTab: React.FC = () => {
 
   return (
     <Card
-      title={<><SettingOutlined style={{ color: '#1677ff' }} /> 目標 / 規格 / 告警規則</>}
+      title={<><SettingOutlined style={{ color: '#1677ff' }} /> Targets / Specs / Alert Rules</>}
       style={{ borderColor: '#e6efff' }}
       extra={
-        <Popconfirm title="恢復為預設值？" onConfirm={reset}>
+        <Popconfirm title="Reset to defaults?" onConfirm={reset}>
           <Button icon={<ReloadOutlined />} size="small">Reset to defaults</Button>
         </Popconfirm>
       }
@@ -41,9 +41,9 @@ export const SettingsTab: React.FC = () => {
         onValuesChange={handleValuesChange}
         initialValues={settings}
       >
-        <Title level={5} style={{ color: '#003a8c', marginTop: 0 }}>Through Yield 三線目標 (%)</Title>
+        <Title level={5} style={{ color: '#003a8c', marginTop: 0 }}>Through Yield Targets (%)</Title>
         <Text type="secondary" style={{ fontSize: 12 }}>
-          Critical &lt; Warning &lt; Target；圖表會以參考線呈現，告警會依此判斷。
+          Critical &lt; Warning &lt; Target; charts show these as reference lines, and alerts use them for evaluation.
         </Text>
         <Row gutter={12} style={{ marginTop: 8 }}>
           <Col span={8}>
@@ -65,9 +65,9 @@ export const SettingsTab: React.FC = () => {
 
         <Divider />
 
-        <Title level={5} style={{ color: '#003a8c' }}>Defect Failure Ratio 上限 (%)</Title>
+        <Title level={5} style={{ color: '#003a8c' }}>Defect Failure Ratio Cap (%)</Title>
         <Text type="secondary" style={{ fontSize: 12 }}>
-          每種 defect 在單筆紀錄中，failure ratio 超過此值會觸發 Warning，超過兩倍會觸發 Critical。
+          For each defect in a single record, a failure ratio above this cap triggers Warning; above 2x triggers Critical.
         </Text>
         <Row gutter={12} style={{ marginTop: 8 }}>
           {YIELD_METRICS.map((m) => (
@@ -92,9 +92,9 @@ export const SettingsTab: React.FC = () => {
 
         <Divider />
 
-        <Title level={5} style={{ color: '#003a8c' }}>Spec Limits（Cpk / SPC 用）</Title>
+        <Title level={5} style={{ color: '#003a8c' }}>Spec Limits (for Cpk / SPC)</Title>
         <Text type="secondary" style={{ fontSize: 12 }}>
-          用於 Process Analytics 的量測值分析；留空代表沒有該側規格。
+          Used for measurement analysis in Process Analytics; leave blank if that side has no Spec limit.
         </Text>
         <div style={{ marginTop: 8 }}>
           {YIELD_METRICS.map((m) => (
@@ -128,22 +128,22 @@ export const SettingsTab: React.FC = () => {
         <Title level={5} style={{ color: '#003a8c' }}>Alert Rules</Title>
         <Row gutter={12}>
           <Col xs={24} md={8}>
-            <Form.Item name={['alertRules', 'enableThresholdBreach']} label="啟用：閾值超出告警" valuePropName="checked">
+            <Form.Item name={['alertRules', 'enableThresholdBreach']} label="Enable: Threshold breach alerts" valuePropName="checked">
               <Switch />
             </Form.Item>
           </Col>
           <Col xs={24} md={8}>
-            <Form.Item name={['alertRules', 'enableMoMChange']} label="啟用：MoM 大幅下降告警" valuePropName="checked">
+            <Form.Item name={['alertRules', 'enableMoMChange']} label="Enable: Major MoM drop alerts" valuePropName="checked">
               <Switch />
             </Form.Item>
           </Col>
           <Col xs={24} md={8}>
-            <Form.Item name={['alertRules', 'momChangeThreshold']} label="MoM 下降閾值 (%)">
+            <Form.Item name={['alertRules', 'momChangeThreshold']} label="MoM Drop Threshold (%)">
               <InputNumber min={0} max={100} step={1} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
           <Col xs={24} md={8}>
-            <Form.Item name={['alertRules', 'enableWesternElectric']} label="啟用：Western Electric Rules" valuePropName="checked">
+            <Form.Item name={['alertRules', 'enableWesternElectric']} label="Enable: Western Electric Rules" valuePropName="checked">
               <Switch />
             </Form.Item>
           </Col>
@@ -151,7 +151,7 @@ export const SettingsTab: React.FC = () => {
 
         <Space>
           <Text type="secondary" style={{ fontSize: 12 }}>
-            ✓ 所有變更已自動儲存於本機 localStorage，無需手動 Save。
+            ✓ All changes are automatically saved to localStorage. No manual Save is required.
           </Text>
         </Space>
       </Form>

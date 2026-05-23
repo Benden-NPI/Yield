@@ -190,7 +190,7 @@ export const YieldInputTable: React.FC = () => {
       render: (_, r) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(r)} size="small" />
-          <Popconfirm title="確定刪除？" onConfirm={() => deleteRecord(r.id)} okText="刪除" cancelText="取消">
+          <Popconfirm title="Delete this item?" onConfirm={() => deleteRecord(r.id)} okText="Delete" cancelText="Cancel">
             <Button type="link" icon={<DeleteOutlined />} danger size="small" />
           </Popconfirm>
         </Space>
@@ -202,9 +202,9 @@ export const YieldInputTable: React.FC = () => {
     <div>
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text strong style={{ fontSize: 16, color: '#003a8c' }}>
-          Yield Records <Tag color="blue">{records.length} 筆</Tag>
+          Yield Records <Tag color="blue">{records.length} records</Tag>
         </Text>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>新增資料列</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>Add Data Row</Button>
       </div>
 
       <Table
@@ -214,16 +214,16 @@ export const YieldInputTable: React.FC = () => {
         bordered
         size="middle"
         scroll={{ x: 1200 }}
-        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 筆` }}
+        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `Total ${t} records` }}
       />
 
       <Modal
-        title={editingId ? '編輯良率資料' : '新增良率資料'}
+        title={editingId ? 'Edit Yield Data' : 'Add Yield Data'}
         open={modalOpen}
         onOk={handleModalOk}
         onCancel={() => setModalOpen(false)}
-        okText="儲存"
-        cancelText="取消"
+        okText="Save"
+        cancelText="Cancel"
         destroyOnClose
         width={680}
       >
@@ -235,12 +235,12 @@ export const YieldInputTable: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="month" label="Month (若未填 Date)" rules={[{ required: true, message: '請選擇月份' }]}>
+              <Form.Item name="month" label="Month (if Date is blank)" rules={[{ required: true, message: 'Select a Month' }]}>
                 <Select options={MONTHS.map((m) => ({ label: m, value: m }))} />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="pn" label="PN (料號)" rules={[{ required: true, message: '請選擇料號' }]}>
+              <Form.Item name="pn" label="PN" rules={[{ required: true, message: 'Select a PN' }]}>
                 <Select
                   options={KNOWN_PNS.map((p) => ({ label: p, value: p }))}
                   showSearch
@@ -258,22 +258,22 @@ export const YieldInputTable: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item name="machine" label="Machine">
-                <Input placeholder="例如 M-01" />
+                <Input placeholder="e.g. M-01" />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="operator" label="Operator">
-                <Input placeholder="操作員代號" />
+                <Input placeholder="Operator ID" />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="materialLot" label="Material Lot">
-                <Input placeholder="原料批號" />
+                <Input placeholder="Material lot no." />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="woNo" label="WO No.">
-                <Input placeholder="工單號" />
+                <Input placeholder="Work order no." />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -282,13 +282,13 @@ export const YieldInputTable: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="input" label="Input 數量" rules={[{ required: true, message: '請輸入投入數量' }]}>
+              <Form.Item name="input" label="Input Quantity" rules={[{ required: true, message: 'Enter input quantity' }]}>
                 <InputNumber min={0} precision={0} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider plain style={{ fontSize: 13, color: '#888' }}>各 Defect Loss 數量</Divider>
+          <Divider plain style={{ fontSize: 13, color: '#888' }}>Defect Loss Quantity by Type</Divider>
           <Row gutter={12}>
             <Col span={12}>
               <Form.Item name="leakageLoss" label="Leakage Loss" rules={[{ required: true }]}>

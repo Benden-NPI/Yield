@@ -21,8 +21,8 @@ export const ParetoChart: React.FC = () => {
   return (
     <ChartCard
       title="Defect Pareto"
-      subtitle="決定『先攻哪個』缺陷"
-      info="長條依 defect 數量由大到小排列，折線顯示累計百分比，協助識別 80/20 重點。"
+      subtitle="Identify which Defect to tackle first"
+      info="Bars sort defects by count; the line shows cumulative percentage to highlight 80/20 priorities."
     >
       {total === 0 ? (
         <EmptyHint height={300} />
@@ -35,15 +35,15 @@ export const ParetoChart: React.FC = () => {
             <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 12 }} />
             <Tooltip
               formatter={(v, name) => {
-                if (name === 'cumulative') return [`${v}%`, '累計 %'];
-                return [v as number, '缺陷數量'];
+                if (name === 'cumulative') return [`${v}%`, 'Cumulative %'];
+                return [v as number, 'Defect Count'];
               }}
             />
             <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 8 }} />
-            <Bar yAxisId="left" dataKey="count" name="缺陷數量" fill="#0050b3" maxBarSize={56}>
+            <Bar yAxisId="left" dataKey="count" name="Defect Count" fill="#0050b3" maxBarSize={56}>
               <LabelList dataKey="count" position="top" style={{ fontSize: 11, fill: '#555' }} />
             </Bar>
-            <Line yAxisId="right" type="monotone" dataKey="cumulative" name="累計 %" stroke="#1677ff" strokeWidth={2}
+            <Line yAxisId="right" type="monotone" dataKey="cumulative" name="Cumulative %" stroke="#1677ff" strokeWidth={2}
               dot={{ r: 4, fill: '#1677ff' }} />
           </ComposedChart>
         </ResponsiveContainer>

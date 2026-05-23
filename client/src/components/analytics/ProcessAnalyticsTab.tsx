@@ -12,7 +12,7 @@ export const ProcessAnalyticsTab: React.FC = () => {
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
-        message="Process Analytics 使用「量測資料」(逐片連續量測值)，請先到「資料輸入 → 量測資料」分頁鍵入。"
+        message="Process Analytics uses Measurement Data (piece-level continuous measurements). Enter data in Data Entry -> Measurement Data first."
       />
       <Row gutter={[16, 16]}>
         <Col xs={24}>

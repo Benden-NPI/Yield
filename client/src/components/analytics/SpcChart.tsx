@@ -68,7 +68,7 @@ export const SpcChart: React.FC = () => {
   return (
     <ChartCard
       title="SPC – Individuals & Moving Range (I-MR)"
-      info="個別值圖 + 移動全距圖。中心線=平均值，UCL/LCL=平均±3σ（σ估計=MR/d2）。紅點=Western Electric Rules 觸發。USL/LSL 為 Settings 的規格界線。"
+      info="Individual values chart + moving range chart. Center line = mean; UCL/LCL = mean +/- 3σ (σ estimated from MR/d2). Red points = Western Electric Rules triggers. USL/LSL are Spec limits from Settings."
       extra={
         <Space>
           <Select size="small" value={effectivePn} onChange={setPn} style={{ width: 160 }}
@@ -85,7 +85,7 @@ export const SpcChart: React.FC = () => {
       }
     >
       {dataPoints.length < 2 ? (
-        <EmptyHint text="此 PN/Metric 的量測筆數不足（至少 2 筆），請在 Data Entry 增加。" height={280} />
+        <EmptyHint text="Insufficient measurements for this PN/Metric (at least 2 records required). Add more in Data Entry." height={280} />
       ) : (
         <>
           <ResponsiveContainer width="100%" height={260}>
@@ -151,7 +151,7 @@ export const SpcChart: React.FC = () => {
           {oocSet.size > 0 && (
             <div style={{ marginTop: 4 }}>
               <Text type="warning" style={{ fontSize: 12 }}>
-                ⚠ 偵測到 Western Electric Rules 觸發（紅點），請至 Alerts &amp; CAPA 建立改善行動。
+                ⚠ Western Electric Rules triggers detected (red points). Create a CAPA action in Alerts &amp; CAPA.
               </Text>
             </div>
           )}

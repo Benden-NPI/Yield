@@ -31,8 +31,13 @@ export const ThroughYieldByPnChart: React.FC = () => {
       const entry: Record<string, string | number | null> = { month };
       for (const pn of allPns) {
         const match = records.find((r) => r.month === month && r.pn === pn);
-        if (!match) entry[pn] = null;
-        else entry[pn] = compute(match.input, match.leakageLoss + match.flatnessLoss + match.pressureDropLoss + match.ttvLoss);
+        if (!match) {
+          entry[pn] = null;
+          entry[`${pn}__input`] = null;
+        } else {
+          entry[pn] = compute(match.input, match.leakageLoss + match.flatnessLoss + match.pressureDropLoss + match.ttvLoss);
+          entry[`${pn}__input`] = match.input;
+        }
       }
       return entry;
     });
@@ -41,7 +46,7 @@ export const ThroughYieldByPnChart: React.FC = () => {
   return (
     <ChartCard
       title="Through Yield by Month (by PN)"
-      info="按 PN 拆解每月 Through Yield，方便比較不同料號。"
+      info="Breaks down monthly Through Yield by PN for easy PN comparison."
     >
       {records.length === 0 ? (
         <EmptyHint height={320} />
@@ -63,6 +68,15 @@ export const ThroughYieldByPnChart: React.FC = () => {
                   position="top"
                   formatter={(v: unknown) => (v != null && v !== '' ? `${v}%` : '')}
                   style={{ fontSize: 11, fill: '#555' }}
+                />
+                <LabelList
+                  dataKey={`${pn}__input`}
+                  position="insideBottom"
+                  offset={4}
+                  formatter={(v: unknown) =>
+                    typeof v === 'number' && Number.isFinite(v) ? `n=${v}` : ''
+                  }
+                  style={{ fontSize: 10, fill: '#fff', fontWeight: 600 }}
                 />
               </Bar>
             ))}

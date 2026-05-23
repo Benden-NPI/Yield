@@ -133,7 +133,7 @@ export const AlertsAndCapaTab: React.FC = () => {
       title: '', key: 'action', width: 130,
       render: (_, r) => (
         <Button size="small" icon={<ToolOutlined />} onClick={() => openFromAlert(r)}>
-          建立 CAPA
+          Create CAPA
         </Button>
       ),
     },
@@ -185,7 +185,7 @@ export const AlertsAndCapaTab: React.FC = () => {
       render: (_, r) => (
         <Space>
           <Button size="small" type="link" icon={<EditOutlined />} onClick={() => openEdit(r)} />
-          <Popconfirm title="刪除這項 CAPA？" onConfirm={() => capa.remove(r.id)}>
+          <Popconfirm title="Delete this CAPA?" onConfirm={() => capa.remove(r.id)}>
             <Button size="small" type="link" icon={<DeleteOutlined />} danger />
           </Popconfirm>
         </Space>
@@ -201,10 +201,10 @@ export const AlertsAndCapaTab: React.FC = () => {
             title={<><AlertOutlined style={{ color: '#1677ff' }} /> Active Alerts</>}
             style={{ borderColor: '#e6efff' }}
             styles={{ body: { padding: '12px 16px' } }}
-            extra={<Text type="secondary">由 Yield 資料 + Settings 規則自動推算</Text>}
+            extra={<Text type="secondary">Automatically calculated from Yield data and Settings rules</Text>}
           >
             {alerts.length === 0 ? (
-              <Empty description="目前沒有告警" />
+              <Empty description="No active alerts" />
             ) : (
               <Table
                 rowKey="id"
@@ -235,7 +235,7 @@ export const AlertsAndCapaTab: React.FC = () => {
                     { label: 'Closed', value: 'closed' },
                   ]}
                 />
-                <Button type="primary" icon={<PlusOutlined />} onClick={openManualAdd}>新增 CAPA</Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={openManualAdd}>Add CAPA</Button>
               </Space>
             }
           >
@@ -272,18 +272,18 @@ export const AlertsAndCapaTab: React.FC = () => {
       </Row>
 
       <Modal
-        title={editingId ? '編輯 CAPA' : '新增 CAPA'}
+        title={editingId ? 'Edit CAPA' : 'Add CAPA'}
         open={modalOpen}
         onOk={handleOk}
         onCancel={() => setModalOpen(false)}
-        okText="儲存"
-        cancelText="取消"
+        okText="Save"
+        cancelText="Cancel"
         destroyOnClose
         width={720}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="title" label="Title" rules={[{ required: true, message: '請輸入標題' }]}>
-            <Input placeholder="例如：May 63AA-LJ-0003 Leakage 高於 cap" />
+          <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Enter a title' }]}>
+            <Input placeholder="e.g. May 63AA-LJ-0003 Leakage above cap" />
           </Form.Item>
           <Form.Item name="description" label="Description">
             <Input.TextArea rows={2} />
@@ -301,7 +301,7 @@ export const AlertsAndCapaTab: React.FC = () => {
               <Form.Item name="month" label="Month"><Input placeholder="January / February / ..." /></Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="owner" label="Owner"><Input placeholder="負責人" /></Form.Item>
+              <Form.Item name="owner" label="Owner"><Input placeholder="Owner" /></Form.Item>
             </Col>
             <Col span={8}>
               <Form.Item name="dueDate" label="Due Date"><DatePicker style={{ width: '100%' }} /></Form.Item>

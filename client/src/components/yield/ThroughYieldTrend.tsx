@@ -20,7 +20,7 @@ export const ThroughYieldTrend: React.FC = () => {
   return (
     <ChartCard
       title="Through Yield Trend by Month"
-      info="(input − total defect) / input，依篩選後的資料於每月加總計算；綠線=目標、黃線=警告、紅線=Critical。"
+      info="(input - total defect) / input, aggregated monthly from filtered records. Green = Target, yellow = Warning, red = Critical."
     >
       {data.length === 0 ? (
         <EmptyHint height={300} />

@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import { Row, Col, Card, Typography, Tag, List, Empty } from 'antd';
+import React, { useMemo, useRef } from 'react';
+import { Row, Col, Card, Typography, Tag, List, Empty, Space } from 'antd';
+import { PdfExportButton } from '../PdfExportButton';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
@@ -68,8 +69,18 @@ export const OverviewTab: React.FC = () => {
     ? new Date(lastUpdatedAt).toLocaleString()
     : '—';
 
+  const reportRef = useRef<HTMLDivElement | null>(null);
+
   return (
     <div>
+      <Space style={{ width: '100%', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <PdfExportButton
+          targetRef={reportRef}
+          fileName="overview-report"
+          label="Export Overview PDF"
+        />
+      </Space>
+      <div ref={reportRef} style={{ background: '#f4f6fa', padding: 1 }}>
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} md={6}>
           <KpiCard
@@ -78,7 +89,7 @@ export const OverviewTab: React.FC = () => {
             suffix="%"
             delta={deltaTY}
             status={tyStatus}
-            hint={latest ? `Month: ${latest.month}` : '無資料'}
+            hint={latest ? `Month: ${latest.month}` : 'No data'}
           />
         </Col>
         <Col xs={24} sm={12} md={6}>
@@ -107,7 +118,7 @@ export const OverviewTab: React.FC = () => {
             precision={0}
             suffix={unitCost > 0 ? '' : undefined}
             status={copq == null ? 'muted' : copq > 0 ? 'warning' : 'good'}
-            hint={unitCost > 0 ? `Unit cost = ${unitCost}` : '請於 Settings 設定 unit cost'}
+            hint={unitCost > 0 ? `Unit cost = ${unitCost}` : 'Set unit cost in Settings'}
           />
         </Col>
 
@@ -128,17 +139,17 @@ export const OverviewTab: React.FC = () => {
             precision={0}
             invertDelta
             status={openCapaCount === 0 ? 'good' : openCapaCount > 5 ? 'critical' : 'warning'}
-            hint="未結案的改善行動"
+            hint="Open CAPA actions"
           />
         </Col>
         <Col xs={24} sm={12} md={12}>
           <Card size="small" style={{ borderColor: '#e6efff' }} styles={{ body: { padding: '14px 16px' } }}>
             <Text strong style={{ color: '#003a8c' }}>Data Freshness</Text>
             <div style={{ fontSize: 13, marginTop: 6, color: '#222' }}>
-              最後資料更新時間：<Text code>{lastUpdatedText}</Text>
+              Last data update: <Text code>{lastUpdatedText}</Text>
             </div>
             <div style={{ fontSize: 12, marginTop: 4, color: '#666' }}>
-              篩選範圍：{records.length} 筆 / 全資料 {useYieldStore.getState().records.length} 筆
+              Filter scope: {records.length} records / All records {useYieldStore.getState().records.length} records
             </div>
           </Card>
         </Col>
@@ -148,7 +159,7 @@ export const OverviewTab: React.FC = () => {
         <Col xs={24} lg={16}>
           <ChartCard
             title="Through Yield Trend"
-            info="趨勢線 + 目標/警告/Critical 三條參考線。"
+            info="Trend line with three reference lines: Target, Warning, and Critical."
           >
             {monthly.length === 0 ? (
               <EmptyHint height={240} />
@@ -181,8 +192,8 @@ export const OverviewTab: React.FC = () => {
         <Col xs={24} lg={8}>
           <ChartCard
             title="Top Defect Modes"
-            subtitle="先攻這幾個"
-            info="依當前篩選資料的 defect 數量排序。"
+            subtitle="Tackle these first"
+            info="Sorted by Defect count in the current filtered data."
           >
             {pareto.length === 0 || pareto[0].count === 0 ? (
               <EmptyHint height={240} />
@@ -212,10 +223,10 @@ export const OverviewTab: React.FC = () => {
         <Col xs={24}>
           <ChartCard
             title="Latest Alerts"
-            info="自動由 Yield 資料 + 你設定的規則計算，最多顯示 8 筆。"
+            info="Automatically calculated from Yield data and your Settings rules. Shows up to 8 records."
           >
             {alerts.length === 0 ? (
-              <Empty description="目前沒有觸發任何告警，繼續加油！" />
+              <Empty description="No alerts triggered. Keep it up!" />
             ) : (
               <List
                 size="small"
@@ -238,10 +249,11 @@ export const OverviewTab: React.FC = () => {
         </Col>
       </Row>
 
-      <Title level={5} style={{ marginTop: 24, color: '#003a8c' }}>使用提示</Title>
+      <Title level={5} style={{ marginTop: 24, color: '#003a8c' }}>Usage Tips</Title>
       <Text type="secondary" style={{ fontSize: 12 }}>
-        Overview 是 Executive 視角，所有指標皆隨「資料輸入」與「Settings」連動。深度分析請見「Yield Reports」、「Process Analytics」。
+        Overview is the executive view. All metrics update with Data Entry and Settings. See Yield Reports and Process Analytics for deeper analysis.
       </Text>
+      </div>
     </div>
   );
 };
