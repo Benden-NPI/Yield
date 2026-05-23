@@ -1,5 +1,5 @@
 export const APP_NAME = 'Yield';
-export const APP_VERSION = '1.0.2';
+export const APP_VERSION = '1.0.3';
 
 export type Shift = 'A' | 'B' | 'C';
 
@@ -47,6 +47,13 @@ export const EMPTY_FILTER: FilterState = {
 export const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+// Months that monthly time-series charts (Through Yield trend, By PN, Defect
+// Failure Ratio, Defect Composition) display on the X axis. Months outside
+// this window are hidden; in-range months with no data render as blanks.
+export const DISPLAY_MONTHS = [
+  'April', 'May', 'June', 'July', 'August', 'September',
 ];
 
 export const KNOWN_PNS = [
