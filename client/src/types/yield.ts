@@ -1,23 +1,48 @@
 export const APP_NAME = 'Yield';
 export const APP_VERSION = '1.0.0';
 
+export type Shift = 'A' | 'B' | 'C';
+
+// Extended record schema (Phase 2).
+// All extra dimensions are optional so legacy records still load cleanly.
 export interface YieldRecord {
   id: string;
-  month: string;
+  month: string;             // Always derived/kept for backward-compat charts.
   pn: string;
   input: number;
   leakageLoss: number;
   flatnessLoss: number;
   pressureDropLoss: number;
   ttvLoss: number;
+
+  date?: string;             // yyyy-mm-dd, optional. Used when present.
+  shift?: Shift;
+  machine?: string;
+  operator?: string;
+  materialLot?: string;
+  woNo?: string;
+  reworkCount?: number;
 }
 
 export type YieldMetric = 'leakage' | 'flatness' | 'pressureDrop' | 'ttv';
 
+export const YIELD_METRICS: YieldMetric[] = ['leakage', 'flatness', 'pressureDrop', 'ttv'];
+
 export interface FilterState {
   months: string[];
   pns: string[];
+  shifts: Shift[];
+  machines: string[];
+  materialLots: string[];
 }
+
+export const EMPTY_FILTER: FilterState = {
+  months: [],
+  pns: [],
+  shifts: [],
+  machines: [],
+  materialLots: [],
+};
 
 export const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -38,6 +63,13 @@ export const METRIC_LABELS: Record<YieldMetric, string> = {
   ttv: 'TTV',
 };
 
+export const METRIC_UNITS: Record<YieldMetric, string> = {
+  leakage: 'ccm',
+  flatness: 'µm',
+  pressureDrop: 'kPa',
+  ttv: 'µm',
+};
+
 export const METRIC_LOSS_FIELD: Record<YieldMetric, keyof Pick<
   YieldRecord,
   'leakageLoss' | 'flatnessLoss' | 'pressureDropLoss' | 'ttvLoss'
@@ -47,15 +79,3 @@ export const METRIC_LOSS_FIELD: Record<YieldMetric, keyof Pick<
   pressureDrop: 'pressureDropLoss',
   ttv: 'ttvLoss',
 };
-
-export const PN_COLORS: Record<string, string> = {
-  '63AA-LJ-0003': '#1890ff',
-  '63AA-LJ-0004': '#52c41a',
-  '62AA-LJ-0001': '#fa8c16',
-  '62AA-LJ-0002': '#722ed1',
-};
-
-export const FALLBACK_COLORS = [
-  '#1890ff', '#52c41a', '#fa8c16', '#722ed1',
-  '#eb2f96', '#13c2c2', '#faad14', '#f5222d',
-];
