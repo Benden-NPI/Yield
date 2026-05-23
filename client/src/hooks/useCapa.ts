@@ -74,6 +74,8 @@ interface CapaStore {
   update: (id: string, patch: Partial<Omit<CapaItem, 'id'>>) => void;
   remove: (id: string) => void;
   setStatus: (id: string, status: CapaStatus) => void;
+  replaceAll: (items: Array<Partial<CapaItem>>) => number;
+  mergeImport: (items: Array<Partial<CapaItem>>) => { added: number; updated: number };
 }
 
 export const useCapaStore = create<CapaStore>((set, get) => ({
@@ -103,5 +105,31 @@ export const useCapaStore = create<CapaStore>((set, get) => ({
     ));
     saveToStorage(items);
     set({ items });
+  },
+  replaceAll: (incoming) => {
+    const items = incoming.map((r) => normalize(r));
+    saveToStorage(items);
+    set({ items });
+    return items.length;
+  },
+  mergeImport: (incoming) => {
+    const current = get().items;
+    const byId = new Map(current.map((i) => [i.id, i]));
+    let added = 0;
+    let updated = 0;
+    for (const raw of incoming) {
+      const candidate = normalize(raw);
+      if (raw.id && byId.has(candidate.id)) {
+        byId.set(candidate.id, candidate);
+        updated += 1;
+      } else {
+        byId.set(candidate.id, candidate);
+        added += 1;
+      }
+    }
+    const items = Array.from(byId.values());
+    saveToStorage(items);
+    set({ items });
+    return { added, updated };
   },
 }));

@@ -53,7 +53,7 @@ export const DefectHeatmap: React.FC = () => {
             <tbody>
               {pns.map((pn) => (
                 <tr key={pn}>
-                  <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: '#222' }}>{pn}</td>
+                  <td style={{ padding: '6px 8px', color: '#222' }}>{pn}</td>
                   {YIELD_METRICS.map((m) => {
                     const cell = cells.find((c) => c.pn === pn && c.metric === m);
                     const ratio = cell?.ratio ?? null;
