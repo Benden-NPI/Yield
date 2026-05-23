@@ -1,0 +1,43 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f6f8fa;
+  color: #111827;
+}
+
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+button {
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+#items {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
+
+code {
+  background: #e5e7eb;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
