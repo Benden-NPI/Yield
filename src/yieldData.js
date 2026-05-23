@@ -46,6 +46,24 @@ async function addRecord(entry) {
   return record;
 }
 
+async function updateRecord(id, updates) {
+  const records = await readAll();
+  const idx = records.findIndex((r) => r.id === id);
+  if (idx === -1) return null;
+  records[idx] = { ...records[idx], ...updates, id };
+  await writeAll(records);
+  return records[idx];
+}
+
+async function deleteRecord(id) {
+  const records = await readAll();
+  const idx = records.findIndex((r) => r.id === id);
+  if (idx === -1) return false;
+  records.splice(idx, 1);
+  await writeAll(records);
+  return true;
+}
+
 function computeYield(input, good) {
   if (!input || input <= 0) return null;
   return Math.round((good / input) * 10000) / 100;
@@ -115,4 +133,4 @@ function buildReport(records) {
   };
 }
 
-module.exports = { readAll, addRecord, buildReport, computeYield };
+module.exports = { readAll, addRecord, updateRecord, deleteRecord, buildReport, computeYield };

@@ -2,7 +2,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const http = require("node:http");
 const { parseWorkItem } = require("./workItemParser");
-const { readAll, addRecord, buildReport } = require("./yieldData");
+const { readAll, addRecord, updateRecord, deleteRecord, buildReport } = require("./yieldData");
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT_DIR = path.resolve(__dirname, "..");
@@ -117,6 +117,48 @@ const server = http.createServer(async (req, res) => {
       jsonResponse(res, 201, { record });
     } catch (error) {
       jsonResponse(res, 500, { error: "Failed to save yield entry.", detail: error.message });
+    }
+    return;
+  }
+
+  // Yield records – PUT update
+  if (url.startsWith("/api/yield/") && method === "PUT") {
+    const id = url.slice("/api/yield/".length);
+    if (!id) {
+      jsonResponse(res, 400, { error: "Missing record id." });
+      return;
+    }
+    try {
+      const body = await readBody(req);
+      const updates = JSON.parse(body);
+      const record = await updateRecord(id, updates);
+      if (!record) {
+        jsonResponse(res, 404, { error: "Record not found." });
+        return;
+      }
+      jsonResponse(res, 200, { record });
+    } catch (error) {
+      jsonResponse(res, 500, { error: "Failed to update yield entry.", detail: error.message });
+    }
+    return;
+  }
+
+  // Yield records – DELETE
+  if (url.startsWith("/api/yield/") && method === "DELETE") {
+    const id = url.slice("/api/yield/".length);
+    if (!id) {
+      jsonResponse(res, 400, { error: "Missing record id." });
+      return;
+    }
+    try {
+      const ok = await deleteRecord(id);
+      if (!ok) {
+        jsonResponse(res, 404, { error: "Record not found." });
+        return;
+      }
+      jsonResponse(res, 200, { deleted: true });
+    } catch (error) {
+      jsonResponse(res, 500, { error: "Failed to delete yield entry.", detail: error.message });
     }
     return;
   }
