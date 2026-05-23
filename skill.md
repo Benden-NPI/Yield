@@ -238,7 +238,78 @@ function toNumber(v: unknown): number {
 
 ---
 
-## E. 給 future self 的 checklist
+## E. 地端更新流程：從 PR merge 到 `npm run dev` 看到新版
+
+雲端 Pages 是給「使用者」開的；開發者本機要驗 PR、跑 HMR、debug，還是得拉下來跑 dev server。
+這個流程**步驟不能跳**，跳了會出現「`git pull` 沒報錯但實際還是舊 code」的鬼故事（見 E5 踩雷紀錄）。
+
+### E1. 前置：把會鎖檔案的東西停掉
+Windows / OneDrive 環境是地雷區，先做這些再動 git / npm：
+- 關閉 **VS Code**（或至少關閉 Yield 資料夾的視窗）。
+- 關掉所有開著 `client/src/assets/`、`client/node_modules/` 的檔案總管視窗。
+- 系統匣 **OneDrive 圖示 → 右鍵 → 暫停同步 2 小時**。
+  - OneDrive + `node_modules` / `package-lock.json` 是地雷組合，會造成 `EBUSY` / `EPERM` 或 lock 衝突。
+
+### E2. 清掉殘留髒東西（只有上次更新失敗才需要）
+```powershell
+# 清壞掉的 stash（若上次 pull 失敗時被自動 stash）
+git stash list
+git stash drop                       # 只有列出 "local lock before sync" 之類才需要
+
+# 還原 package-lock.json 的本地修改（最常見的擋路兇手）
+git checkout -- client/package-lock.json
+#   ※ 千萬不要手動編輯 package-lock.json，永遠交給 npm install 自動生成
+
+# 確認 working tree 乾淨
+git status                           # 必須看到 "nothing to commit, working tree clean"
+```
+若 `git status` 本來就乾淨，可直接跳到 E3。
+
+### E3. 從遠端抓最新並切到目標分支（**絕對不能跳**）
+```powershell
+git fetch origin                     # 必要
+git checkout <branch-name>           # 例如 copilot/xxx 或 main
+git pull                             # 必要
+git log --oneline -3                 # 目視確認 HEAD 是預期 commit，不要假設 pull 成功
+```
+- `git fetch origin` 跟 `git pull` **任何一個都不能省**。
+- `git pull` 後務必 `git log --oneline -1` 確認 commit hash，pull 失敗不一定會明顯報錯。
+
+### E4. 裝相依 + 啟動 dev server
+```powershell
+cd client
+npm install                          # package.json 變動時才會真的裝新套件（例如 html2canvas-pro）
+npm run dev                          # → http://localhost:5188
+```
+然後瀏覽器 **Ctrl + F5**（或無痕視窗）強制 reload，避免吃到舊的 service worker / cache。
+
+### E5. 上次踩過的雷（為什麼 E1~E2 看似多餘卻不能省）
+- **症狀**：`git pull` 沒報明顯錯誤，但 `npm run dev` 起來還是舊版、新套件（`html2canvas-pro`）沒裝到。
+- **根因**：`client/package-lock.json` 有本地修改（可能是上次 `npm install` 被打斷，或 OneDrive 改寫造成），讓 `git pull` 無法 fast-forward，實際還停在舊 commit；連帶 `package.json` 也是舊的，`npm install` 自然不會去裝新相依。
+- **解法**：E1 停掉 OneDrive/VS Code 解除檔案鎖 → E2 `git checkout -- client/package-lock.json` 還原 lock → E3 才能真的 pull 到新版 → E4 才會真的裝新套件。
+
+### E6. 常見替代路徑（什麼時候用 dev、什麼時候用 preview）
+| 情境 | 指令 | 注意 |
+|------|------|------|
+| 寫 code / debug，要 HMR | `npm --prefix client run dev` | 改檔即時 reload |
+| 模擬 production build（測 `base: '/Yield/'`、minify、PDF 樣式） | `npm run build` → `npm run preview` | **每次都要先 build**，否則看到的是舊 `dist/` |
+| 純驗證版本號是不是新的 | 看右上角 header tag 的 `APP_VERSION` | 對不上代表 cache 沒清乾淨，回 Ctrl+F5 |
+
+### E7. 一鍵清單（最簡版，working tree 乾淨時）
+```powershell
+cd "<本專案路徑>\Yield"
+git fetch origin
+git checkout <branch>
+git pull
+git log --oneline -1            # 目視驗 commit
+cd client
+npm install
+npm run dev                     # → http://localhost:5188，瀏覽器 Ctrl+F5
+```
+
+---
+
+## F. 給 future self 的 checklist
 
 新增 / 修改 Flow 時：
 - [ ] HTTP trigger 的 URL 不要進 source code。
