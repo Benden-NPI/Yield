@@ -1,0 +1,22 @@
+{
+  "name": "yield",
+  "version": "1.0.0",
+  "description": "良率管理系統 (React + TypeScript + Vite, 資料儲存於 localStorage)。",
+  "private": true,
+  "scripts": {
+    "install:client": "npm --prefix client install",
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "preview": "npm --prefix client run preview",
+    "lint": "npm --prefix client run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Benden-NPI/Yield.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Benden-NPI/Yield/issues"
+  },
+  "homepage": "https://github.com/Benden-NPI/Yield#readme"
+}
