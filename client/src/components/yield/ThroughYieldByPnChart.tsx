@@ -49,7 +49,7 @@ export const ThroughYieldByPnChart: React.FC = () => {
         <EmptyHint height={320} />
       ) : (
         <ResponsiveContainer width="100%" height={340}>
-          <BarChart data={chartData} margin={{ top: 24, right: 20, left: 0, bottom: 8 }} barCategoryGap="25%" barGap={4}>
+          <BarChart data={chartData} margin={{ top: 24, right: 20, left: 0, bottom: 8 }} barCategoryGap="12%" barGap={2}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
             <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 12 }} width={48} />
@@ -59,7 +59,7 @@ export const ThroughYieldByPnChart: React.FC = () => {
             }} />
             <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 8 }} />
             {allPns.map((pn, idx) => (
-              <Bar key={pn} dataKey={pn} name={pn} fill={pickBlue(idx)} maxBarSize={48}>
+              <Bar key={pn} dataKey={pn} name={pn} fill={pickBlue(idx)} maxBarSize={62}>
                 <LabelList
                   dataKey={pn}
                   position="top"

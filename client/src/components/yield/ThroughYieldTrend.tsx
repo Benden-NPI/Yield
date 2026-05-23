@@ -30,7 +30,7 @@ export const ThroughYieldTrend: React.FC = () => {
         <EmptyHint height={300} />
       ) : (
         <ResponsiveContainer width="100%" height={320}>
-          <LineChart data={data} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
+          <LineChart data={data} margin={{ top: 24, right: 120, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
             <YAxis
@@ -47,11 +47,11 @@ export const ThroughYieldTrend: React.FC = () => {
             />
             <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 8 }} />
             <ReferenceLine y={throughYield.target} stroke="#52c41a" strokeDasharray="4 4"
-              label={{ value: `Target ${throughYield.target}%`, position: 'right', fill: '#52c41a', fontSize: 11 }} />
+              label={{ value: `Target ${throughYield.target}%`, position: 'right', fill: '#52c41a', fontSize: 12, fontWeight: 600 }} />
             <ReferenceLine y={throughYield.warning} stroke="#faad14" strokeDasharray="4 4"
-              label={{ value: `Warning ${throughYield.warning}%`, position: 'right', fill: '#faad14', fontSize: 11 }} />
+              label={{ value: `Warning ${throughYield.warning}%`, position: 'right', fill: '#faad14', fontSize: 12, fontWeight: 600 }} />
             <ReferenceLine y={throughYield.critical} stroke="#ff4d4f" strokeDasharray="4 4"
-              label={{ value: `Critical ${throughYield.critical}%`, position: 'right', fill: '#ff4d4f', fontSize: 11 }} />
+              label={{ value: `Critical ${throughYield.critical}%`, position: 'right', fill: '#ff4d4f', fontSize: 12, fontWeight: 600 }} />
             <Line
               type="monotone"
               dataKey="throughYield"

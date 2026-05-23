@@ -74,8 +74,32 @@ export const DefectFailureRatioChart: React.FC = () => {
                 <LabelList
                   dataKey={pn}
                   position="top"
-                  formatter={(v: unknown) => (v != null && v !== '' ? `${v}%` : '')}
-                  style={{ fontSize: 11, fill: '#555' }}
+                  content={(props) => {
+                    // Use a custom renderer so 0% labels are still drawn
+                    // (Recharts' default LabelList can drop labels for zero-
+                    // height bars when relying on `position="top"` alone).
+                    const p = props as {
+                      x?: number; y?: number; width?: number; height?: number;
+                      value?: number | string | null;
+                    };
+                    const v = p.value;
+                    if (v == null || v === '') return null;
+                    const x = (p.x ?? 0) + (p.width ?? 0) / 2;
+                    // For zero-height bars, y is at the baseline; nudge label
+                    // up so it stays visible above the x-axis line.
+                    const y = (p.y ?? 0) - 6;
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor="middle"
+                        fontSize={11}
+                        fill="#555"
+                      >
+                        {`${v}%`}
+                      </text>
+                    );
+                  }}
                 />
               </Bar>
             ))}

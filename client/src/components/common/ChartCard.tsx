@@ -16,6 +16,7 @@ interface Props {
 export const ChartCard: React.FC<Props> = ({ title, subtitle, info, extra, children, bodyPadding = '16px 20px' }) => {
   return (
     <Card
+      data-pdf-block="true"
       style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)', borderColor: '#e6efff' }}
       styles={{ body: { padding: bodyPadding } }}
     >
