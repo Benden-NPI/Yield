@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import type { FilterState, Shift, YieldMetric, YieldRecord } from '../types/yield';
@@ -159,19 +160,37 @@ export const useYieldStore = create<YieldStore>((set, get) => {
 
     clearFilter: () => set({ filter: { ...EMPTY_FILTER } }),
 
-    filteredRecords: () => {
-      const { records, filter } = get();
-      return records.filter((r) => {
-        if (filter.months.length > 0 && !filter.months.includes(r.month)) return false;
-        if (filter.pns.length > 0 && !filter.pns.includes(r.pn)) return false;
-        if (filter.shifts.length > 0 && (!r.shift || !filter.shifts.includes(r.shift))) return false;
-        if (filter.machines.length > 0 && (!r.machine || !filter.machines.includes(r.machine))) return false;
-        if (filter.materialLots.length > 0 && (!r.materialLot || !filter.materialLots.includes(r.materialLot))) return false;
-        return true;
-      });
-    },
+    filteredRecords: () => filterRecords(get().records, get().filter),
   };
 });
+
+/**
+ * Pure helper: apply a FilterState to a records array. Safe to call outside React.
+ */
+export function filterRecords(records: YieldRecord[], filter: FilterState): YieldRecord[] {
+  return records.filter((r) => {
+    if (filter.months.length > 0 && !filter.months.includes(r.month)) return false;
+    if (filter.pns.length > 0 && !filter.pns.includes(r.pn)) return false;
+    if (filter.shifts.length > 0 && (!r.shift || !filter.shifts.includes(r.shift))) return false;
+    if (filter.machines.length > 0 && (!r.machine || !filter.machines.includes(r.machine))) return false;
+    if (filter.materialLots.length > 0 && (!r.materialLot || !filter.materialLots.includes(r.materialLot))) return false;
+    return true;
+  });
+}
+
+/**
+ * React hook returning the filtered records with a STABLE reference between renders
+ * (recomputed only when `records` or `filter` changes).
+ *
+ * Do NOT use `useYieldStore((s) => s.filteredRecords())` directly: that selector returns
+ * a new array reference on every render, which breaks zustand's `useSyncExternalStore`
+ * snapshot caching and causes "Maximum update depth exceeded" infinite render loops.
+ */
+export function useFilteredRecords(): YieldRecord[] {
+  const records = useYieldStore((s) => s.records);
+  const filter = useYieldStore((s) => s.filter);
+  return useMemo(() => filterRecords(records, filter), [records, filter]);
+}
 
 // ---------- aggregation helpers (pure, exported for charts/tabs) ----------
 

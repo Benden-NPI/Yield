@@ -1,14 +1,13 @@
 import { useCallback } from 'react';
-import { useYieldStore } from './useYieldData';
+import { useFilteredRecords } from './useYieldData';
 import { exportToExcel } from '../utils/excelExport';
 
 export function useExcelExport() {
-  const { filteredRecords } = useYieldStore();
+  const records = useFilteredRecords();
 
   const handleExport = useCallback(() => {
-    const records = filteredRecords();
     exportToExcel(records);
-  }, [filteredRecords]);
+  }, [records]);
 
   return { handleExport };
 }

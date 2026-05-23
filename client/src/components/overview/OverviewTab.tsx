@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
 } from 'recharts';
-import { useYieldStore, aggregateByMonth, paretoByDefect } from '../../hooks/useYieldData';
+import { useYieldStore, aggregateByMonth, paretoByDefect, useFilteredRecords } from '../../hooks/useYieldData';
 import { useSettingsStore } from '../../hooks/useSettings';
 import { useAlerts } from '../../hooks/useAlerts';
 import { useCapaStore } from '../../hooks/useCapa';
@@ -17,7 +17,7 @@ import { pctChange } from '../../utils/statistics';
 const { Text, Title } = Typography;
 
 export const OverviewTab: React.FC = () => {
-  const records = useYieldStore((s) => s.filteredRecords());
+  const records = useFilteredRecords();
   const lastUpdatedAt = useYieldStore((s) => s.lastUpdatedAt);
   const { throughYield, unitCost } = useSettingsStore();
   const alerts = useAlerts();

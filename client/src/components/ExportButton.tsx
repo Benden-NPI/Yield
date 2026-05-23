@@ -2,12 +2,11 @@ import React from 'react';
 import { Button, Tooltip } from 'antd';
 import { FileExcelOutlined } from '@ant-design/icons';
 import { useExcelExport } from '../hooks/useExcelExport';
-import { useYieldStore } from '../hooks/useYieldData';
+import { useFilteredRecords } from '../hooks/useYieldData';
 
 export const ExportButton: React.FC = () => {
   const { handleExport } = useExcelExport();
-  const { filteredRecords } = useYieldStore();
-  const count = filteredRecords().length;
+  const count = useFilteredRecords().length;
 
   return (
     <Tooltip title={count === 0 ? '無資料可匯出' : `匯出 ${count} 筆資料`}>

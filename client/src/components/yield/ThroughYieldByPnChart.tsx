@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, LabelList, ResponsiveContainer,
 } from 'recharts';
-import { useYieldStore } from '../../hooks/useYieldData';
+import { useFilteredRecords } from '../../hooks/useYieldData';
 import { MONTHS, KNOWN_PNS } from '../../types/yield';
 import { pickBlue } from '../../utils/colors';
 import { ChartCard } from '../common/ChartCard';
@@ -16,7 +16,7 @@ function compute(input: number, defects: number): number | null {
 }
 
 export const ThroughYieldByPnChart: React.FC = () => {
-  const records = useYieldStore((s) => s.filteredRecords());
+  const records = useFilteredRecords();
 
   const allPns = useMemo(() => {
     const pns = new Set<string>([...KNOWN_PNS, ...records.map((r) => r.pn)]);
