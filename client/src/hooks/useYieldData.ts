@@ -4,10 +4,62 @@ import type { YieldRecord, FilterState } from '../types/yield';
 
 const STORAGE_KEY = 'yield_records';
 
+type StoredRecord = Partial<YieldRecord> & {
+  leakage?: number | null;
+  flatness?: number | null;
+  pressureDrop?: number | null;
+  ttv?: number | null;
+};
+
+function toNonNegativeInteger(value: unknown): number {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) return 0;
+  return Math.round(num);
+}
+
+export function computeYieldFromLoss(input: number, loss: number): number | null {
+  if (!Number.isFinite(input) || input <= 0) return null;
+  const boundedLoss = Math.min(Math.max(loss, 0), input);
+  const yieldRate = ((input - boundedLoss) / input) * 100;
+  return Math.round(yieldRate * 100) / 100;
+}
+
+function legacyPercentToLoss(input: number, percent: number | null | undefined): number {
+  if (!Number.isFinite(input) || input <= 0) return 0;
+  if (percent == null || !Number.isFinite(percent)) return 0;
+  const loss = input * (1 - percent / 100);
+  return toNonNegativeInteger(Math.max(loss, 0));
+}
+
+function normalizeRecord(raw: StoredRecord): YieldRecord {
+  const input = toNonNegativeInteger(raw.input);
+  return {
+    id: raw.id && String(raw.id).trim() ? String(raw.id) : uuidv4(),
+    month: String(raw.month || ''),
+    pn: String(raw.pn || ''),
+    input,
+    leakageLoss: raw.leakageLoss != null
+      ? toNonNegativeInteger(raw.leakageLoss)
+      : legacyPercentToLoss(input, raw.leakage),
+    flatnessLoss: raw.flatnessLoss != null
+      ? toNonNegativeInteger(raw.flatnessLoss)
+      : legacyPercentToLoss(input, raw.flatness),
+    pressureDropLoss: raw.pressureDropLoss != null
+      ? toNonNegativeInteger(raw.pressureDropLoss)
+      : legacyPercentToLoss(input, raw.pressureDrop),
+    ttvLoss: raw.ttvLoss != null
+      ? toNonNegativeInteger(raw.ttvLoss)
+      : legacyPercentToLoss(input, raw.ttv),
+  };
+}
+
 function loadFromStorage(): YieldRecord[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item) => normalizeRecord(item as StoredRecord));
   } catch {
     return [];
   }
@@ -33,7 +85,7 @@ export const useYieldStore = create<YieldStore>((set, get) => ({
   filter: { months: [], pns: [] },
 
   addRecord: (record) => {
-    const newRecord: YieldRecord = { id: uuidv4(), ...record };
+    const newRecord: YieldRecord = normalizeRecord({ id: uuidv4(), ...record });
     const records = [...get().records, newRecord];
     saveToStorage(records);
     set({ records });
@@ -41,7 +93,7 @@ export const useYieldStore = create<YieldStore>((set, get) => ({
 
   updateRecord: (id, updates) => {
     const records = get().records.map((r) =>
-      r.id === id ? { ...r, ...updates } : r
+      r.id === id ? normalizeRecord({ ...r, ...updates, id }) : r
     );
     saveToStorage(records);
     set({ records });

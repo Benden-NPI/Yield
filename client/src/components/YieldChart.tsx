@@ -4,11 +4,11 @@ import {
   Legend, LabelList, ResponsiveContainer,
 } from 'recharts';
 import { Radio, Typography, Empty } from 'antd';
-import { useYieldStore } from '../hooks/useYieldData';
+import { useYieldStore, computeYieldFromLoss } from '../hooks/useYieldData';
 import type { YieldMetric } from '../types/yield';
 import {
   MONTHS, KNOWN_PNS,
-  METRIC_LABELS, PN_COLORS, FALLBACK_COLORS,
+  METRIC_LABELS, PN_COLORS, FALLBACK_COLORS, METRIC_LOSS_FIELD,
 } from '../types/yield';
 
 const { Title } = Typography;
@@ -37,7 +37,12 @@ export const YieldChart: React.FC = () => {
       const entry: Record<string, string | number | null> = { month };
       for (const pn of allPns) {
         const match = records.find((r) => r.month === month && r.pn === pn);
-        entry[pn] = match ? (match[metric] ?? null) : null;
+        if (!match) {
+          entry[pn] = null;
+          continue;
+        }
+        const lossField = METRIC_LOSS_FIELD[metric];
+        entry[pn] = computeYieldFromLoss(match.input, match[lossField]);
       }
       return entry;
     });

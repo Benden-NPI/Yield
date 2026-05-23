@@ -2,11 +2,11 @@ export interface YieldRecord {
   id: string;
   month: string;
   pn: string;
-  leakage: number | null;
-  flatness: number | null;
-  pressureDrop: number | null;
-  ttv: number | null;
   input: number;
+  leakageLoss: number;
+  flatnessLoss: number;
+  pressureDropLoss: number;
+  ttvLoss: number;
 }
 
 export type YieldMetric = 'leakage' | 'flatness' | 'pressureDrop' | 'ttv';
@@ -33,6 +33,16 @@ export const METRIC_LABELS: Record<YieldMetric, string> = {
   flatness: 'Flatness',
   pressureDrop: 'Pressure Drop',
   ttv: 'TTV',
+};
+
+export const METRIC_LOSS_FIELD: Record<YieldMetric, keyof Pick<
+  YieldRecord,
+  'leakageLoss' | 'flatnessLoss' | 'pressureDropLoss' | 'ttvLoss'
+>> = {
+  leakage: 'leakageLoss',
+  flatness: 'flatnessLoss',
+  pressureDrop: 'pressureDropLoss',
+  ttv: 'ttvLoss',
 };
 
 export const PN_COLORS: Record<string, string> = {

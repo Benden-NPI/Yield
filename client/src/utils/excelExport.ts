@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import type { YieldRecord } from '../types/yield';
+import { computeYieldFromLoss } from '../hooks/useYieldData';
 
 function formatDate(d: Date): string {
   const yyyy = d.getFullYear();
@@ -12,24 +13,34 @@ export function exportToExcel(records: YieldRecord[]): void {
   const wb = XLSX.utils.book_new();
 
   // --- Sheet 1: Raw data ---
-  const headers = ['Month', 'PN', 'Leakage %', 'Flatness %', 'Pressure Drop %', 'TTV %', 'Input'];
+  const headers = [
+    'Month', 'PN', 'Input',
+    'Leakage Loss', 'Leakage Yield %',
+    'Flatness Loss', 'Flatness Yield %',
+    'Pressure Drop Loss', 'Pressure Drop Yield %',
+    'TTV Loss', 'TTV Yield %',
+  ];
 
   const rows = records.map((r) => [
     r.month,
     r.pn,
-    r.leakage != null ? r.leakage / 100 : '',
-    r.flatness != null ? r.flatness / 100 : '',
-    r.pressureDrop != null ? r.pressureDrop / 100 : '',
-    r.ttv != null ? r.ttv / 100 : '',
     r.input,
+    r.leakageLoss,
+    computeYieldFromLoss(r.input, r.leakageLoss) != null ? (computeYieldFromLoss(r.input, r.leakageLoss) as number) / 100 : '',
+    r.flatnessLoss,
+    computeYieldFromLoss(r.input, r.flatnessLoss) != null ? (computeYieldFromLoss(r.input, r.flatnessLoss) as number) / 100 : '',
+    r.pressureDropLoss,
+    computeYieldFromLoss(r.input, r.pressureDropLoss) != null ? (computeYieldFromLoss(r.input, r.pressureDropLoss) as number) / 100 : '',
+    r.ttvLoss,
+    computeYieldFromLoss(r.input, r.ttvLoss) != null ? (computeYieldFromLoss(r.input, r.ttvLoss) as number) / 100 : '',
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
 
-  // Apply percentage format to columns C–F (indices 2–5)
+  // Apply percentage format to yield columns E/G/I/K
   const range = XLSX.utils.decode_range(ws['!ref'] ?? 'A1');
   for (let R = 1; R <= range.e.r; R++) {
-    for (let C = 2; C <= 5; C++) {
+    for (const C of [4, 6, 8, 10]) {
       const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
       const cell = ws[cellAddr];
       if (cell && typeof cell.v === 'number') {
@@ -40,13 +51,17 @@ export function exportToExcel(records: YieldRecord[]): void {
 
   // Column widths
   ws['!cols'] = [
-    { wch: 12 }, // Month
-    { wch: 16 }, // PN
-    { wch: 14 }, // Leakage
-    { wch: 14 }, // Flatness
-    { wch: 18 }, // Pressure Drop
-    { wch: 12 }, // TTV
-    { wch: 10 }, // Input
+    { wch: 12 },
+    { wch: 16 },
+    { wch: 10 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 12 },
+    { wch: 12 },
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, 'Yield Data');
@@ -64,10 +79,10 @@ export function exportToExcel(records: YieldRecord[]): void {
     for (const pn of pns) {
       const match = records.find((r) => r.month === month && r.pn === pn);
       row.push(
-        match?.leakage != null ? match.leakage / 100 : '',
-        match?.flatness != null ? match.flatness / 100 : '',
-        match?.pressureDrop != null ? match.pressureDrop / 100 : '',
-        match?.ttv != null ? match.ttv / 100 : '',
+        match ? ((computeYieldFromLoss(match.input, match.leakageLoss) ?? 0) / 100) : '',
+        match ? ((computeYieldFromLoss(match.input, match.flatnessLoss) ?? 0) / 100) : '',
+        match ? ((computeYieldFromLoss(match.input, match.pressureDropLoss) ?? 0) / 100) : '',
+        match ? ((computeYieldFromLoss(match.input, match.ttvLoss) ?? 0) / 100) : '',
       );
     }
     return row;
