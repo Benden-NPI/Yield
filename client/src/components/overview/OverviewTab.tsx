@@ -26,6 +26,15 @@ export const OverviewTab: React.FC = () => {
   const monthly = useMemo(() => aggregateByMonth(records), [records]);
   const pareto = useMemo(() => paretoByDefect(records), [records]);
 
+  // Stable reference for Recharts <LineChart data={...}>. Re-creating this array
+  // inline on every render makes Recharts v3 (which subscribes to its internal
+  // store via useSyncExternalStore) repeatedly notify its subscribers and
+  // triggers "Maximum update depth exceeded" via forceStoreRerender.
+  const throughYieldTrendData = useMemo(
+    () => monthly.map((m) => ({ month: m.month, throughYield: m.throughYield })),
+    [monthly],
+  );
+
   // Pick the latest two months (by month index) for KPI computation
   const latest = monthly.length > 0
     ? [...monthly].sort((a, b) => MONTHS.indexOf(b.month) - MONTHS.indexOf(a.month))[0]
@@ -146,7 +155,7 @@ export const OverviewTab: React.FC = () => {
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart
-                  data={monthly.map((m) => ({ month: m.month, throughYield: m.throughYield }))}
+                  data={throughYieldTrendData}
                   margin={{ top: 12, right: 24, left: 0, bottom: 4 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
