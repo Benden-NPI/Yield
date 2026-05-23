@@ -50,26 +50,48 @@ export function setStoredWebhookUrl(url: string): void {
   }
 }
 
-interface SharePointRow {
-  ItemInternalId?: string;
-  PN?: string;
-  Date?: string;
-  Month?: string;
-  Input?: string | number;
-  'Leak Fail'?: string | number;
-  'Flatness Fail'?: string | number;
-  'Pressure drop Fail'?: string | number;
-  'TTV Fail'?: string | number;
-}
+type SharePointRow = Record<string, unknown>;
 
 function toNumber(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ * Normalize a key for tolerant comparison:
+ *   - lower-case
+ *   - strip all non-alphanumeric chars (spaces, underscores, SharePoint
+ *     hex escapes like `_x0020_`, `OData__x0044_` prefixes, etc.)
+ */
+function normKey(k: string): string {
+  return k.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Find the first value in `row` whose key — after normalization — matches any
+ * of the given normalized candidates. Returns `undefined` if none match.
+ *
+ * SharePoint / Power Automate often mangles column names:
+ *   - "Date" (reserved-ish) → internal name `Date0` or `OData__x0044_ate`
+ *   - "Leak Fail" → `Leak_x0020_Fail`
+ *   - display vs. internal name mismatch depending on how the Flow projects
+ *     the row (Get items vs. Select / Compose).
+ * So we match by a normalized form rather than exact string.
+ */
+function pickKey(row: SharePointRow, candidates: string[]): unknown {
+  const wanted = candidates.map(normKey);
+  for (const [k, v] of Object.entries(row)) {
+    if (wanted.includes(normKey(k))) {
+      return v;
+    }
+  }
+  return undefined;
+}
+
 function deriveMonth(row: SharePointRow): { month: string; date?: string } {
   // Prefer explicit Date (yyyy-mm-dd or ISO); fall back to Month name.
-  const rawDate = row.Date ? String(row.Date).trim() : '';
+  const rawDateVal = pickKey(row, ['Date', 'Date0', 'OData__x0044_ate', 'EventDate']);
+  const rawDate = rawDateVal != null ? String(rawDateVal).trim() : '';
   if (rawDate) {
     // Accept "2026-05-01" or full ISO "2026-05-01T00:00:00Z".
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(rawDate);
@@ -80,7 +102,8 @@ function deriveMonth(row: SharePointRow): { month: string; date?: string } {
       }
     }
   }
-  const rawMonth = row.Month ? String(row.Month).trim() : '';
+  const rawMonthVal = pickKey(row, ['Month']);
+  const rawMonth = rawMonthVal != null ? String(rawMonthVal).trim() : '';
   if (rawMonth && MONTHS.includes(rawMonth)) {
     return { month: rawMonth };
   }
@@ -90,16 +113,20 @@ function deriveMonth(row: SharePointRow): { month: string; date?: string } {
 export function mapSharePointRows(rows: SharePointRow[]): Array<Partial<YieldRecord>> {
   return rows.map((row) => {
     const { month, date } = deriveMonth(row);
+    const id = pickKey(row, ['ItemInternalId', 'ID', 'Id']);
+    const pn = pickKey(row, ['PN', 'P/N', 'PartNumber']);
     return {
-      id: row.ItemInternalId ? String(row.ItemInternalId) : undefined,
-      pn: row.PN ? String(row.PN) : '',
+      id: id != null ? String(id) : undefined,
+      pn: pn != null ? String(pn) : '',
       month,
       date,
-      input: toNumber(row.Input),
-      leakageLoss: toNumber(row['Leak Fail']),
-      flatnessLoss: toNumber(row['Flatness Fail']),
-      pressureDropLoss: toNumber(row['Pressure drop Fail']),
-      ttvLoss: toNumber(row['TTV Fail']),
+      input: toNumber(pickKey(row, ['Input'])),
+      leakageLoss: toNumber(pickKey(row, ['Leak Fail', 'LeakFail', 'Leakage Fail'])),
+      flatnessLoss: toNumber(pickKey(row, ['Flatness Fail', 'FlatnessFail'])),
+      pressureDropLoss: toNumber(
+        pickKey(row, ['Pressure drop Fail', 'PressureDropFail', 'Pressure Drop Fail']),
+      ),
+      ttvLoss: toNumber(pickKey(row, ['TTV Fail', 'TTVFail'])),
     };
   });
 }
@@ -152,6 +179,20 @@ export function useSharePointSync(): UseSharePointSync {
       }
       const mapped = mapSharePointRows(rows);
       const missingMonth = mapped.filter((r) => !r.month).length;
+      // Debug aid: when Date mapping fails, log the actual keys returned by
+      // the Flow so the user can see what SharePoint named the column.
+      if (rows.length > 0 && missingMonth > 0) {
+        console.warn(
+          '[SharePoint sync] missing Date on',
+          missingMonth,
+          'of',
+          mapped.length,
+          'rows. First raw row keys =',
+          Object.keys(rows[0] as object),
+          'first raw row =',
+          rows[0],
+        );
+      }
       replaceRecords(mapped);
       const now = Date.now();
       setLastSyncAt(now);
