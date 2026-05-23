@@ -1,42 +1,56 @@
-# Yield
+# Yield 良率管理系統
 
-Git repo can be used as the source of truth for work-management markdown data.
+純前端的良率管理工具，使用 **React + TypeScript + Vite + Ant Design**，資料儲存在瀏覽器的 `localStorage`，**不需要後端**。
 
-## Work item data source
+## 專案結構
 
-- Directory: `/tmp/workspace/Benden-NPI/Yield/docs/work-items`
-- Pattern: `*.md`
-- Format: YAML front matter + markdown checklist body
+```
+Yield/
+├── client/                  # 前端原始碼（Vite + React + TS）
+│   ├── src/
+│   │   ├── components/      # UI 元件 (YieldInputTable, YieldChart, FilterPanel, ExportButton)
+│   │   ├── hooks/           # Zustand store + Excel 匯出
+│   │   ├── types/           # 共用 TypeScript 型別
+│   │   └── App.tsx
+│   ├── vite.config.ts       # dev/preview 固定在 port 5188
+│   └── package.json
+├── package.json             # 根 package.json，scripts 都 delegate 到 client/
+├── memory.md                # 開發備忘（port、環境等）
+└── README.md
+```
 
-See `/tmp/workspace/Benden-NPI/Yield/docs/work-items/README.md` for schema and access modes.
+## 開發
 
-## Interface example
+第一次先安裝依賴：
 
-A minimal interface example is included and reads:
+```bash
+npm run install:client
+```
 
-- `/tmp/workspace/Benden-NPI/Yield/docs/work-items/*.md`
+啟動開發伺服器（hot reload）：
 
-Run:
+```bash
+npm run dev
+```
 
-1. `cd /tmp/workspace/Benden-NPI/Yield`
-2. `npm start`
-3. Open `http://localhost:3000`
+瀏覽器打開 http://localhost:5188
 
-API endpoint:
+## 其他指令
 
-- `GET /api/work-items`
+| 指令 | 說明 |
+|---|---|
+| `npm run dev` | 啟動 Vite dev server (port 5188) |
+| `npm run build` | 編譯 + 打包到 `client/dist/` |
+| `npm run preview` | 預覽打包結果（port 5188） |
+| `npm run lint` | ESLint 檢查 |
 
-UI features:
+## 主要功能
 
-- Kanban board columns: `Todo`, `In Progress`, `Done`
-- Search by id/title/owner/file/tags
-- Owner filter dropdown
+- 依 Month × PN 輸入每筆良率資料
+- 對每個 defect (Leakage / Flatness / Pressure Drop / TTV) 輸入 **loss 數量**，系統自動換算良率
+- 圖表（Recharts）+ 篩選（月份 / 料號）
+- 匯出 Excel（SheetJS）
 
-## Yield management interface
+## 資料儲存
 
-Navigate to `http://localhost:3000/yield.html` to use the yield management system.
-
-Features:
-- Input form for yield records (product / lot / station / quantity / defect categories)
-- Auto-generated report: overall yield summary, daily trend, yield by station, defect Pareto
-- Filter by product and station
+所有資料儲存於瀏覽器 `localStorage`，key 為 `yield_records`。清除瀏覽器資料會清空所有紀錄，建議定期使用「匯出 Excel」備份。

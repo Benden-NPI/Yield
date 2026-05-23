@@ -1,27 +1,20 @@
 {
   "name": "yield",
   "version": "1.0.0",
-  "description": "Git repo can be used as the source of truth for work-management markdown data.",
-  "main": "src/server.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "良率管理系統 (React + TypeScript + Vite, 資料儲存於 localStorage)。",
+  "private": true,
   "scripts": {
-    "start": "node src/server.js",
-    "serve": "npm run build:client && node src/server.js",
-    "test": "node --test",
+    "install:client": "npm --prefix client install",
     "dev": "npm --prefix client run dev",
-    "build:client": "npm --prefix client run build",
-    "install:client": "npm --prefix client install"
+    "build": "npm --prefix client run build",
+    "preview": "npm --prefix client run preview",
+    "lint": "npm --prefix client run lint"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Benden-NPI/Yield.git"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/Benden-NPI/Yield/issues"
   },
