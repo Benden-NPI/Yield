@@ -53,4 +53,21 @@ npm run dev
 
 ## 資料儲存
 
-所有資料儲存於瀏覽器 `localStorage`，key 為 `yield_records`。清除瀏覽器資料會清空所有紀錄，建議定期使用「匯出 Excel」備份。
+所有資料儲存於瀏覽器 `localStorage`，key 為 `yield_records`。清除瀏覽器資料會清空所有紀錄,建議定期使用「匯出 Excel」備份。
+
+> 注意：localStorage 是**每個瀏覽器/每位使用者各自獨立**的,即使部署到 GitHub Pages 由多人開啟,各自看到的資料不會共享。
+
+## 部署到 GitHub Pages（其他人不需安裝 Node 即可使用）
+
+本專案已內建 `.github/workflows/deploy-pages.yml`,推到 `main` 後會自動 build 並部署到 GitHub Pages。
+
+**首次啟用步驟**(只需做一次):
+
+1. 在 GitHub repo 的 **Settings → Pages**,把 **Source** 改成 **GitHub Actions**。
+2. 確認 **Settings → Actions → General → Workflow permissions** 允許 read/write(預設即可)。
+3. 把這個 PR / 變更 merge 到 `main`,workflow 會自動跑。
+4. 完成後網址會是: `https://benden-npi.github.io/Yield/`
+5. 把這個網址分享給同事,他們用瀏覽器打開就能用,**完全不需要安裝 Node 或執行 `npm run dev`**。
+
+`vite.config.ts` 已將 `base` 設為 `/Yield/`,對應 Pages 上的子路徑。若日後 repo 改名,需要同步更新此設定。
+
