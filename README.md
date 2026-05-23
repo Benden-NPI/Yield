@@ -31,3 +31,12 @@ UI features:
 - Kanban board columns: `Todo`, `In Progress`, `Done`
 - Search by id/title/owner/file/tags
 - Owner filter dropdown
+
+## Yield management interface
+
+Navigate to `http://localhost:3000/yield.html` to use the yield management system.
+
+Features:
+- Input form for yield records (product / lot / station / quantity / defect categories)
+- Auto-generated report: overall yield summary, daily trend, yield by station, defect Pareto
+- Filter by product and station

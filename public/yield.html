@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>良率管理系統</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/yield.css" />
+  </head>
+  <body>
+    <header class="topnav">
+      <a href="/">工作看板</a>
+      <a href="/yield.html" class="active">良率管理</a>
+    </header>
+    <main>
+      <h1>良率管理系統</h1>
+
+      <!-- Input Form -->
+      <section class="card form-section">
+        <h2>新增良率記錄</h2>
+        <form id="yieldForm">
+          <div class="form-grid">
+            <label>日期 <input type="date" name="date" required /></label>
+            <label>產品 <input type="text" name="product" placeholder="e.g. ProductA" required /></label>
+            <label>批次 <input type="text" name="lot" placeholder="e.g. LOT-001" required /></label>
+            <label>製程站 <input type="text" name="station" placeholder="e.g. SMT" required /></label>
+            <label>投入數量 <input type="number" name="input" min="1" required /></label>
+            <label>良品數量 <input type="number" name="good" min="0" required /></label>
+          </div>
+          <div id="defectRows">
+            <h3>不良分類</h3>
+            <div id="defectList"></div>
+            <button type="button" id="addDefect">＋ 新增不良類別</button>
+          </div>
+          <label class="full-width">備注 <input type="text" name="note" /></label>
+          <div class="form-actions">
+            <button type="submit">儲存記錄</button>
+            <span id="formStatus"></span>
+          </div>
+        </form>
+      </section>
+
+      <!-- Report -->
+      <section class="report-section">
+        <div class="report-header">
+          <h2>良率報表</h2>
+          <div class="report-controls">
+            <label>產品篩選
+              <select id="filterProduct"><option value="">所有產品</option></select>
+            </label>
+            <label>製程站篩選
+              <select id="filterStation"><option value="">所有製程站</option></select>
+            </label>
+            <button id="refreshReport">刷新報表</button>
+          </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="summary-label">總良率</div>
+            <div class="summary-value" id="summaryYield">—</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">總投入</div>
+            <div class="summary-value" id="summaryInput">—</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">總良品</div>
+            <div class="summary-value" id="summaryGood">—</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">記錄筆數</div>
+            <div class="summary-value" id="summaryCount">—</div>
+          </div>
+        </div>
+
+        <!-- Trend table -->
+        <div class="report-block">
+          <h3>每日良率趨勢</h3>
+          <table id="trendTable">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>投入</th>
+                <th>良品</th>
+                <th>良率</th>
+                <th>良率條</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- By station -->
+        <div class="report-block">
+          <h3>各製程站良率</h3>
+          <table id="stationTable">
+            <thead>
+              <tr>
+                <th>製程站</th>
+                <th>投入</th>
+                <th>良品</th>
+                <th>良率</th>
+                <th>良率條</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- Defect Pareto -->
+        <div class="report-block">
+          <h3>不良類別 Pareto</h3>
+          <table id="paretoTable">
+            <thead>
+              <tr>
+                <th>不良類別</th>
+                <th>數量</th>
+                <th>佔比</th>
+                <th>佔比條</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- Raw records -->
+        <div class="report-block">
+          <h3>記錄明細</h3>
+          <div id="recordsTable"></div>
+        </div>
+      </section>
+    </main>
+    <script src="/yield.js"></script>
+  </body>
+</html>
