@@ -243,35 +243,49 @@ function toNumber(v: unknown): number {
 雲端 Pages 是給「使用者」開的；開發者本機要驗 PR、跑 HMR、debug，還是得拉下來跑 dev server。
 這個流程**步驟不能跳**，跳了會出現「`git pull` 沒報錯但實際還是舊 code」的鬼故事（見 E5 踩雷紀錄）。
 
-### E1. 前置：把會鎖檔案的東西停掉
-Windows / OneDrive 環境是地雷區，先做這些再動 git / npm：
-- 關閉 **VS Code**（或至少關閉 Yield 資料夾的視窗）。
-- 關掉所有開著 `client/src/assets/`、`client/node_modules/` 的檔案總管視窗。
-- 系統匣 **OneDrive 圖示 → 右鍵 → 暫停同步 2 小時**。
-  - OneDrive + `node_modules` / `package-lock.json` 是地雷組合，會造成 `EBUSY` / `EPERM` 或 lock 衝突。
+### E1. 前置：先在 GitHub 端 Merge PR，再把本機會鎖檔案的東西停掉
+1. **在 GitHub 上 Merge PR** 到目標分支（通常是 `main`）。
+   - 沒 merge 就 pull `main`，本機自然看不到變更。
+   - 若只是要驗 PR 還沒 merge，就把 E3 的 `<branch-name>` 改成那個 PR 的 `copilot/xxx` 分支即可。
+2. Windows / OneDrive 環境是地雷區，動 git / npm 之前先：
+   - 關閉 **VS Code**（或至少關閉 Yield 資料夾的視窗）。
+   - 關掉所有開著 `client/src/assets/`、`client/node_modules/` 的檔案總管視窗。
+   - 系統匣 **OneDrive 圖示 → 右鍵 → 暫停同步 2 小時**。
+     - OneDrive + `node_modules` / `package-lock.json` 是地雷組合，會造成 `EBUSY` / `EPERM` 或 lock 衝突。
 
 ### E2. 清掉殘留髒東西（只有上次更新失敗才需要）
+**順序很重要**：先看 stash 再還原 lock，避免把有用的 stash 砍掉、或在還沒檢查狀態前就動檔案。
 ```powershell
-# 清壞掉的 stash（若上次 pull 失敗時被自動 stash）
+# 1) 先看 stash 列表（不會改任何東西）
 git stash list
-git stash drop                       # 只有列出 "local lock before sync" 之類才需要
 
-# 還原 package-lock.json 的本地修改（最常見的擋路兇手）
+# 2) 確認是 "local lock before sync" 之類的壞 stash 才 drop；其他 stash 不要動
+git stash drop                       # 只在 stash list 有壞 stash 時執行
+
+# 3) 還原 package-lock.json 的本地修改（最常見的擋路兇手）
 git checkout -- client/package-lock.json
 #   ※ 千萬不要手動編輯 package-lock.json，永遠交給 npm install 自動生成
-
-# 確認 working tree 乾淨
-git status                           # 必須看到 "nothing to commit, working tree clean"
 ```
-若 `git status` 本來就乾淨，可直接跳到 E3。
+若一開始 `git stash list` 就空、`git status` 也乾淨，整個 E2 可以跳過直接到 E3。
 
 ### E3. 從遠端抓最新並切到目標分支（**絕對不能跳**）
 ```powershell
+# 1) 先確認 working tree 乾淨；不乾淨就回 E2 處理
+git status                           # 必須看到 "nothing to commit, working tree clean"
+
+# 2) 從遠端抓最新
 git fetch origin                     # 必要
-git checkout <branch-name>           # 例如 copilot/xxx 或 main
+
+# 3) 切到目標分支（剛 merge 完通常是 main；驗 PR 則是 copilot/xxx）
+git checkout <branch-name>
+
+# 4) 拉新 commit
 git pull                             # 必要
-git log --oneline -3                 # 目視確認 HEAD 是預期 commit，不要假設 pull 成功
+
+# 5) 目視確認 HEAD 是預期 commit，不要假設 pull 成功
+git log --oneline -3
 ```
+- `git status` 在 fetch / checkout 之前先檔住，避免帶著未提交的本地修改硬切分支造成衝突。
 - `git fetch origin` 跟 `git pull` **任何一個都不能省**。
 - `git pull` 後務必 `git log --oneline -1` 確認 commit hash，pull 失敗不一定會明顯報錯。
 
@@ -297,7 +311,9 @@ npm run dev                          # → http://localhost:5188
 
 ### E7. 一鍵清單（最簡版，working tree 乾淨時）
 ```powershell
+# 前提：GitHub 上 PR 已經 Merge 到目標分支
 cd "<本專案路徑>\Yield"
+git status                      # 確認 working tree 乾淨
 git fetch origin
 git checkout <branch>
 git pull
