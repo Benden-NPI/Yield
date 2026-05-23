@@ -88,17 +88,54 @@ function pickKey(row: SharePointRow, candidates: string[]): unknown {
   return undefined;
 }
 
+/** Candidate column names for the row's Date field. */
+const DATE_KEY_CANDIDATES = [
+  'Date',
+  'Date0',
+  'Date1',
+  'OData__x0044_ate',
+  'EventDate',
+  'Event Date',
+  'RecordDate',
+  'Record Date',
+  'ReportDate',
+  'Report Date',
+  'DateTime',
+  'Date Time',
+  'ProductionDate',
+  'Production Date',
+  'Created',
+  'Modified',
+  'Title',
+  '日期',
+];
+
 function deriveMonth(row: SharePointRow): { month: string; date?: string } {
   // Prefer explicit Date (yyyy-mm-dd or ISO); fall back to Month name.
-  const rawDateVal = pickKey(row, ['Date', 'Date0', 'OData__x0044_ate', 'EventDate']);
+  const rawDateVal = pickKey(row, DATE_KEY_CANDIDATES);
   const rawDate = rawDateVal != null ? String(rawDateVal).trim() : '';
   if (rawDate) {
-    // Accept "2026-05-01" or full ISO "2026-05-01T00:00:00Z".
+    // Fast path: "2026-05-01" or full ISO "2026-05-01T00:00:00Z".
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(rawDate);
     if (m) {
       const monthIdx = Number(m[2]) - 1;
       if (monthIdx >= 0 && monthIdx <= 11) {
         return { month: MONTHS[monthIdx], date: `${m[1]}-${m[2]}-${m[3]}` };
+      }
+    }
+    // Fallback: let the JS engine parse other formats Power Automate / SharePoint
+    // may emit (e.g. "5/1/2026", "5/1/2026 12:00:00 AM", "2026/05/01",
+    // "Fri, 01 May 2026 00:00:00 GMT"). Use UTC getters so a date-only value
+    // isn't shifted across the day boundary by the local timezone.
+    const d = new Date(rawDate);
+    if (!Number.isNaN(d.getTime())) {
+      const y = d.getUTCFullYear();
+      const mo = d.getUTCMonth();
+      const day = d.getUTCDate();
+      if (mo >= 0 && mo <= 11) {
+        const mm = String(mo + 1).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        return { month: MONTHS[mo], date: `${y}-${mm}-${dd}` };
       }
     }
   }
@@ -179,18 +216,23 @@ export function useSharePointSync(): UseSharePointSync {
       }
       const mapped = mapSharePointRows(rows);
       const missingMonth = mapped.filter((r) => !r.month).length;
-      // Debug aid: when Date mapping fails, log the actual keys returned by
-      // the Flow so the user can see what SharePoint named the column.
+      // Debug aid: when Date mapping fails, log the actual keys + a JSON dump
+      // of the first row so the user can see what SharePoint named the column.
+      // We stringify so the console shows real values instead of a collapsed
+      // `Array(n)` / `Object` placeholder that the user can't expand from a
+      // copy-pasted log.
       if (rows.length > 0 && missingMonth > 0) {
+        const firstRow = rows[0] as object;
+        const keys = Object.keys(firstRow);
+        let sample = '';
+        try {
+          sample = JSON.stringify(firstRow);
+        } catch {
+          sample = '[unserializable]';
+        }
         console.warn(
-          '[SharePoint sync] missing Date on',
-          missingMonth,
-          'of',
-          mapped.length,
-          'rows. First raw row keys =',
-          Object.keys(rows[0] as object),
-          'first raw row =',
-          rows[0],
+          `[SharePoint sync] missing Date on ${missingMonth} of ${mapped.length} rows. ` +
+            `First raw row keys = [${keys.join(', ')}] first raw row = ${sample}`,
         );
       }
       replaceRecords(mapped);
