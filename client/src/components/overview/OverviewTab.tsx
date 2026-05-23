@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Row, Col, Card, Typography, Tag, List, Empty, Space } from 'antd';
 import { PdfExportButton } from '../PdfExportButton';
 import {
@@ -9,10 +9,11 @@ import { useYieldStore, aggregateByMonth, paretoByDefect, useFilteredRecords } f
 import { useSettingsStore } from '../../hooks/useSettings';
 import { useAlerts } from '../../hooks/useAlerts';
 import { useCapaStore } from '../../hooks/useCapa';
-import { MONTHS, METRIC_LABELS } from '../../types/yield';
+import { MONTHS, METRIC_LABELS, DISPLAY_MONTHS } from '../../types/yield';
 import { ChartCard } from '../common/ChartCard';
 import { EmptyHint } from '../common/EmptyHint';
 import { KpiCard } from './KpiCard';
+import { YieldReportsContent } from '../yield/YieldReportsContent';
 import { pctChange } from '../../utils/statistics';
 
 const { Text, Title } = Typography;
@@ -31,8 +32,16 @@ export const OverviewTab: React.FC = () => {
   // inline on every render makes Recharts v3 (which subscribes to its internal
   // store via useSyncExternalStore) repeatedly notify its subscribers and
   // triggers "Maximum update depth exceeded" via forceStoreRerender.
+  // Always render every month in DISPLAY_MONTHS (April–September); months with
+  // no data show as null so the trend line just leaves a gap there.
   const throughYieldTrendData = useMemo(
-    () => monthly.map((m) => ({ month: m.month, throughYield: m.throughYield })),
+    () => {
+      const byMonth = new Map(monthly.map((m) => [m.month, m]));
+      return DISPLAY_MONTHS.map((month) => ({
+        month,
+        throughYield: byMonth.get(month)?.throughYield ?? null,
+      }));
+    },
     [monthly],
   );
 
@@ -70,14 +79,24 @@ export const OverviewTab: React.FC = () => {
     : '—';
 
   const reportRef = useRef<HTMLDivElement | null>(null);
+  const yieldReportsExportRef = useRef<HTMLDivElement | null>(null);
+  // Mount the Yield Reports section off-screen only while exporting, so the
+  // Overview PDF can include it as a second section without polluting the
+  // normal Overview UI or paying its render cost continuously.
+  const [renderYieldReportsForExport, setRenderYieldReportsForExport] = useState(false);
 
   return (
     <div>
       <Space style={{ width: '100%', justifyContent: 'flex-end', marginBottom: 12 }}>
         <PdfExportButton
-          targetRef={reportRef}
+          targetRef={[reportRef, yieldReportsExportRef]}
           fileName="overview-report"
-          label="Export Overview PDF"
+          label="Export Overview + Yield Reports PDF"
+          beforeCapture={() => setRenderYieldReportsForExport(true)}
+          afterCapture={() => setRenderYieldReportsForExport(false)}
+          // Give React time to mount the off-screen subtree and Recharts'
+          // ResponsiveContainer time to measure & paint before html2canvas runs.
+          prepareDelayMs={700}
         />
       </Space>
       <div ref={reportRef} style={{ background: '#f4f6fa', padding: 1 }}>
@@ -161,7 +180,7 @@ export const OverviewTab: React.FC = () => {
             title="Through Yield Trend"
             info="Trend line with three reference lines: Target, Warning, and Critical."
           >
-            {monthly.length === 0 ? (
+            {records.length === 0 ? (
               <EmptyHint height={240} />
             ) : (
               <ResponsiveContainer width="100%" height={260}>
@@ -254,6 +273,29 @@ export const OverviewTab: React.FC = () => {
         Overview is the executive view. All metrics update with Data Entry and Settings. See Yield Reports and Process Analytics for deeper analysis.
       </Text>
       </div>
+
+      {/* Off-screen Yield Reports section, only rendered while exporting so
+          html2canvas can capture it as the second PDF section. Positioned far
+          left so it neither paints visibly nor interferes with the page flow,
+          but kept at a fixed wide width so Recharts' ResponsiveContainer
+          measures correctly and the charts render at a sensible size. */}
+      {renderYieldReportsForExport && (
+        <div
+          ref={yieldReportsExportRef}
+          aria-hidden
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: -100000,
+            width: 1200,
+            background: '#f4f6fa',
+            padding: 16,
+            pointerEvents: 'none',
+          }}
+        >
+          <YieldReportsContent />
+        </div>
+      )}
     </div>
   );
 };

@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { aggregateByMonth, useFilteredRecords } from '../../hooks/useYieldData';
 import { useSettingsStore } from '../../hooks/useSettings';
+import { DISPLAY_MONTHS } from '../../types/yield';
 import { ChartCard } from '../common/ChartCard';
 import { EmptyHint } from '../common/EmptyHint';
 
@@ -12,17 +13,20 @@ export const ThroughYieldTrend: React.FC = () => {
   const records = useFilteredRecords();
   const { throughYield } = useSettingsStore();
 
-  const data = useMemo(() => aggregateByMonth(records).map((m) => ({
-    month: m.month,
-    throughYield: m.throughYield,
-  })), [records]);
+  const data = useMemo(() => {
+    const byMonth = new Map(aggregateByMonth(records).map((m) => [m.month, m]));
+    return DISPLAY_MONTHS.map((month) => ({
+      month,
+      throughYield: byMonth.get(month)?.throughYield ?? null,
+    }));
+  }, [records]);
 
   return (
     <ChartCard
       title="Through Yield Trend by Month"
       info="(input - total defect) / input, aggregated monthly from filtered records. Green = Target, yellow = Warning, red = Critical."
     >
-      {data.length === 0 ? (
+      {records.length === 0 ? (
         <EmptyHint height={300} />
       ) : (
         <ResponsiveContainer width="100%" height={320}>

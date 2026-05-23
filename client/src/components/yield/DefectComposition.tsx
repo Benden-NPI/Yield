@@ -4,7 +4,7 @@ import {
   Legend, ResponsiveContainer,
 } from 'recharts';
 import { aggregateByMonth, useFilteredRecords } from '../../hooks/useYieldData';
-import { METRIC_LABELS, YIELD_METRICS } from '../../types/yield';
+import { METRIC_LABELS, YIELD_METRICS, DISPLAY_MONTHS } from '../../types/yield';
 import { DEFECT_BLUE } from '../../utils/colors';
 import { ChartCard } from '../common/ChartCard';
 import { EmptyHint } from '../common/EmptyHint';
@@ -13,8 +13,12 @@ export const DefectComposition: React.FC = () => {
   const records = useFilteredRecords();
 
   const data = useMemo(() => {
-    const monthly = aggregateByMonth(records);
-    return monthly.map((m) => {
+    const byMonth = new Map(aggregateByMonth(records).map((m) => [m.month, m]));
+    return DISPLAY_MONTHS.map((month) => {
+      const m = byMonth.get(month);
+      if (!m) {
+        return { month, leakage: null, flatness: null, pressureDrop: null, ttv: null, totalDefect: 0 };
+      }
       const total = m.totalDefect || 1;
       return {
         month: m.month,
@@ -32,7 +36,7 @@ export const DefectComposition: React.FC = () => {
       title="Defect Composition (100% Stacked, by Month)"
       info="Shows the monthly mix of four Defects to reveal shifts in the failure structure."
     >
-      {data.length === 0 ? (
+      {records.length === 0 ? (
         <EmptyHint height={300} />
       ) : (
         <ResponsiveContainer width="100%" height={320}>

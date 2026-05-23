@@ -1,13 +1,8 @@
 import React, { useRef } from 'react';
-import { Row, Col, Card, Space } from 'antd';
+import { Card, Space } from 'antd';
 import { FilterPanel } from '../FilterPanel';
 import { PdfExportButton } from '../PdfExportButton';
-import { ThroughYieldTrend } from './ThroughYieldTrend';
-import { ThroughYieldByPnChart } from './ThroughYieldByPnChart';
-import { DefectFailureRatioChart } from './DefectFailureRatioChart';
-import { ParetoChart } from './ParetoChart';
-import { DefectHeatmap } from './DefectHeatmap';
-import { DefectComposition } from './DefectComposition';
+import { YieldReportsContent } from './YieldReportsContent';
 
 export const YieldReportsTab: React.FC = () => {
   const reportRef = useRef<HTMLDivElement | null>(null);
@@ -27,26 +22,7 @@ export const YieldReportsTab: React.FC = () => {
       </Space>
 
       <div ref={reportRef} style={{ background: '#f4f6fa', padding: 1 }}>
-        <Row gutter={[16, 16]}>
-          <Col xs={24}>
-            <ThroughYieldTrend />
-          </Col>
-          <Col xs={24}>
-            <ThroughYieldByPnChart />
-          </Col>
-          <Col xs={24} lg={14}>
-            <ParetoChart />
-          </Col>
-          <Col xs={24} lg={10}>
-            <DefectHeatmap />
-          </Col>
-          <Col xs={24}>
-            <DefectFailureRatioChart />
-          </Col>
-          <Col xs={24}>
-            <DefectComposition />
-          </Col>
-        </Row>
+        <YieldReportsContent />
       </div>
     </div>
   );

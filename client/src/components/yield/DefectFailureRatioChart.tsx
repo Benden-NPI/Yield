@@ -7,7 +7,7 @@ import { Radio } from 'antd';
 import { computeDefectFailureRatio, useFilteredRecords } from '../../hooks/useYieldData';
 import { useSettingsStore } from '../../hooks/useSettings';
 import type { YieldMetric } from '../../types/yield';
-import { MONTHS, KNOWN_PNS, METRIC_LABELS, METRIC_LOSS_FIELD, YIELD_METRICS } from '../../types/yield';
+import { KNOWN_PNS, METRIC_LABELS, METRIC_LOSS_FIELD, YIELD_METRICS, DISPLAY_MONTHS } from '../../types/yield';
 import { pickBlue } from '../../utils/colors';
 import { ChartCard } from '../common/ChartCard';
 import { EmptyHint } from '../common/EmptyHint';
@@ -23,10 +23,7 @@ export const DefectFailureRatioChart: React.FC = () => {
   }, [records]);
 
   const chartData = useMemo(() => {
-    const monthsPresent = records.length > 0
-      ? MONTHS.filter((m) => records.some((r) => r.month === m))
-      : [];
-    return monthsPresent.map((month) => {
+    return DISPLAY_MONTHS.map((month) => {
       const entry: Record<string, string | number | null> = { month };
       for (const pn of allPns) {
         const match = records.find((r) => r.month === month && r.pn === pn);
