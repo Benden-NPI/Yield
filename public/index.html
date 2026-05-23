@@ -10,11 +10,35 @@
     <main>
       <h1>Work Items Interface Example</h1>
       <p>Source: <code>/tmp/workspace/Benden-NPI/Yield/docs/work-items/*.md</code></p>
-      <button id="reload">Reload</button>
+      <section class="controls">
+        <label>
+          Search
+          <input id="search" type="search" placeholder="Search id/title/owner/file" />
+        </label>
+        <label>
+          Owner
+          <select id="ownerFilter">
+            <option value="">All owners</option>
+          </select>
+        </label>
+        <button id="reload">Reload</button>
+      </section>
       <p id="status"></p>
-      <section id="items"></section>
+      <section id="board" class="board">
+        <article class="column">
+          <h2>Todo <span id="count-todo" class="count">0</span></h2>
+          <div id="col-todo" class="column-items"></div>
+        </article>
+        <article class="column">
+          <h2>In Progress <span id="count-in-progress" class="count">0</span></h2>
+          <div id="col-in-progress" class="column-items"></div>
+        </article>
+        <article class="column">
+          <h2>Done <span id="count-done" class="count">0</span></h2>
+          <div id="col-done" class="column-items"></div>
+        </article>
+      </section>
     </main>
     <script src="/main.js"></script>
   </body>
   </html>
-

@@ -25,3 +25,9 @@ Run:
 API endpoint:
 
 - `GET /api/work-items`
+
+UI features:
+
+- Kanban board columns: `Todo`, `In Progress`, `Done`
+- Search by id/title/owner/file/tags
+- Owner filter dropdown
