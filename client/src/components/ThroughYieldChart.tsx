@@ -1,14 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, LabelList, ResponsiveContainer,
 } from 'recharts';
-import { Radio, Typography, Empty } from 'antd';
+import { Typography, Empty } from 'antd';
 import { useYieldStore } from '../hooks/useYieldData';
-import type { YieldMetric } from '../types/yield';
 import {
-  MONTHS, KNOWN_PNS,
-  METRIC_LABELS, PN_COLORS, FALLBACK_COLORS, METRIC_LOSS_FIELD,
+  MONTHS, KNOWN_PNS, PN_COLORS, FALLBACK_COLORS,
 } from '../types/yield';
 
 const { Title } = Typography;
@@ -17,17 +15,23 @@ function getColor(pn: string, index: number): string {
   return PN_COLORS[pn] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length];
 }
 
-function computeDefectFailureRatio(input: number, loss: number): number | null {
+function computeThroughYield(
+  input: number,
+  leakage: number,
+  flatness: number,
+  pressureDrop: number,
+  ttv: number,
+): number | null {
   if (!Number.isFinite(input) || input <= 0) return null;
-  const boundedLoss = Math.min(Math.max(loss, 0), input);
-  const ratio = (boundedLoss / input) * 100;
+  const totalDefect = Math.max(0, leakage) + Math.max(0, flatness)
+    + Math.max(0, pressureDrop) + Math.max(0, ttv);
+  const bounded = Math.min(totalDefect, input);
+  const ratio = ((input - bounded) / input) * 100;
   return Math.round(ratio * 100) / 100;
 }
 
-export const YieldChart: React.FC = () => {
+export const ThroughYieldChart: React.FC = () => {
   const { filteredRecords } = useYieldStore();
-  const [metric, setMetric] = useState<YieldMetric>('leakage');
-
   const records = filteredRecords();
 
   const allPns = useMemo(() => {
@@ -48,17 +52,17 @@ export const YieldChart: React.FC = () => {
           entry[pn] = null;
           continue;
         }
-        const lossField = METRIC_LOSS_FIELD[metric];
-        entry[pn] = computeDefectFailureRatio(match.input, match[lossField]);
+        entry[pn] = computeThroughYield(
+          match.input,
+          match.leakageLoss,
+          match.flatnessLoss,
+          match.pressureDropLoss,
+          match.ttvLoss,
+        );
       }
       return entry;
     });
-  }, [records, metric, allPns]);
-
-  const metricOptions = (Object.keys(METRIC_LABELS) as YieldMetric[]).map((key) => ({
-    label: METRIC_LABELS[key],
-    value: key,
-  }));
+  }, [records, allPns]);
 
   if (records.length === 0) {
     return (
@@ -72,16 +76,8 @@ export const YieldChart: React.FC = () => {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <Title level={5} style={{ margin: 0 }}>
-          Defect Failure Ratio by {METRIC_LABELS[metric]}
+          Through Yield by Month
         </Title>
-        <Radio.Group
-          options={metricOptions}
-          value={metric}
-          onChange={(e) => setMetric(e.target.value)}
-          optionType="button"
-          buttonStyle="solid"
-          size="small"
-        />
       </div>
 
       <ResponsiveContainer width="100%" height={360}>

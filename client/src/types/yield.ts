@@ -1,3 +1,6 @@
+export const APP_NAME = 'Yield';
+export const APP_VERSION = '1.0.0';
+
 export interface YieldRecord {
   id: string;
   month: string;
