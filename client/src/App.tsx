@@ -2,7 +2,7 @@ import React from 'react';
 import { ConfigProvider, Layout, Typography, Tabs, theme, Tag, Space } from 'antd';
 import {
   BarChartOutlined, DashboardOutlined, LineChartOutlined,
-  FormOutlined, AlertOutlined, ExperimentOutlined, SettingOutlined,
+  FormOutlined, AlertOutlined, ExperimentOutlined, SettingOutlined, ToolOutlined,
 } from '@ant-design/icons';
 import { ExportButton } from './components/ExportButton';
 import { OverviewTab } from './components/overview/OverviewTab';
@@ -11,6 +11,7 @@ import { DataEntryTab } from './components/entry/DataEntryTab';
 import { AlertsAndCapaTab } from './components/capa/AlertsAndCapaTab';
 import { ProcessAnalyticsTab } from './components/analytics/ProcessAnalyticsTab';
 import { SettingsTab } from './components/settings/SettingsTab';
+import ToolGanttTab from './components/toolgantt/ToolGanttTab';
 import { useYieldStore } from './hooks/useYieldData';
 import { APP_NAME, APP_VERSION } from './types/yield';
 
@@ -27,6 +28,7 @@ const App: React.FC = () => {
     { key: 'alerts',    label: <span><AlertOutlined /> Alerts &amp; CAPA</span>,        children: <AlertsAndCapaTab /> },
     { key: 'analytics', label: <span><ExperimentOutlined /> Process Analytics</span>,   children: <ProcessAnalyticsTab /> },
     { key: 'settings',  label: <span><SettingOutlined /> Settings</span>,               children: <SettingsTab /> },
+    { key: 'toolgantt', label: <span><ToolOutlined /> Tool PO Tracking</span>,          children: <ToolGanttTab /> },
   ];
 
   return (
