@@ -5,6 +5,9 @@ import { useSettingsStore, DEFAULT_SETTINGS } from '../../hooks/useSettings';
 import type { SettingsState } from '../../hooks/useSettings';
 import { METRIC_LABELS, METRIC_UNITS, YIELD_METRICS } from '../../types/yield';
 import { useSharePointSync, getStoredWebhookUrl, setStoredWebhookUrl } from '../../hooks/useSharePointSync';
+import { useToolGanttSync, getToolGanttWebhookUrl, setToolGanttWebhookUrl } from '../../hooks/useToolGanttSync';
+import { useToolGanttStore } from '../../hooks/useToolGanttStore';
+import type { ToolRecord } from '../toolgantt/types';
 
 const { Title, Text } = Typography;
 
@@ -13,6 +16,15 @@ export const SettingsTab: React.FC = () => {
   const [form] = Form.useForm<SettingsState>();
   const { sync, syncing, lastSyncAt, lastError } = useSharePointSync();
   const [webhookUrl, setWebhookUrl] = React.useState<string>(() => getStoredWebhookUrl());
+
+  /* Tool Gantt SharePoint */
+  const [tgWebhookUrl, setTgWebhookUrl] = React.useState<string>(() => getToolGanttWebhookUrl());
+  const storeSetRecords = useToolGanttStore((s) => s.setRecords);
+  const handleTgData = React.useCallback((records: ToolRecord[]) => {
+    storeSetRecords(records, 'SharePoint');
+  }, [storeSetRecords]);
+  const { sync: tgSync, syncing: tgSyncing, lastSyncAt: tgLastSyncAt, lastError: tgLastError } = useToolGanttSync(handleTgData);
+  const tgSyncedCount = useToolGanttStore((s) => s.records?.length ?? null);
 
   React.useEffect(() => {
     form.setFieldsValue(settings);
@@ -43,6 +55,22 @@ export const SettingsTab: React.FC = () => {
       } else {
         message.success(`已從 SharePoint 載入 ${result.count} 筆資料`);
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      message.error(`同步失敗：${msg}`);
+    }
+  };
+
+  const handleTgSaveUrl = () => {
+    setToolGanttWebhookUrl(tgWebhookUrl.trim());
+    message.success('Tool Gantt Webhook URL 已儲存');
+  };
+
+  const handleTgSync = async () => {
+    try {
+      setToolGanttWebhookUrl(tgWebhookUrl.trim());
+      const result = await tgSync(tgWebhookUrl.trim());
+      message.success(`已從 SharePoint 載入 ${result.count} 筆工具資料，請切換到 Tool PO Tracking 頁面查看`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       message.error(`同步失敗：${msg}`);
@@ -97,6 +125,60 @@ export const SettingsTab: React.FC = () => {
         <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
           {lastSyncAt && <span>最後同步：{new Date(lastSyncAt).toLocaleString()} </span>}
           {lastError && <span style={{ color: '#cf1322' }}>錯誤：{lastError}</span>}
+        </div>
+      </Card>
+
+      <Card
+        title={<><CloudDownloadOutlined style={{ color: '#52c41a' }} /> Tool PO Tracking — SharePoint 同步</>}
+        style={{ borderColor: '#e6ffed' }}
+      >
+        <Alert
+          type="success"
+          showIcon
+          message="從 Power Automate Webhook 載入 Tool PO Tracking Excel 資料"
+          description={
+            <div style={{ fontSize: 12 }}>
+              <div>• 按下「從 SharePoint 同步」會 <b>覆寫</b> Tool Gantt 的資料（本機 session）。</div>
+              <div>• Webhook URL 只存在這台瀏覽器的 localStorage，<b>不會 commit 進 source code</b>。</div>
+              <div>• SharePoint 表格需要包含：<code>Item</code>、<code>Tool</code>、<code>Vendor</code>、<code>Qty</code>、<code>Move-In</code>、<code>Setup</code>、<code>Tuning</code>、<code>Qualify</code> 欄位。</div>
+              <div>• 同步後切換到 <b>Tool PO Tracking</b> 頁面即可看到更新的 Gantt 圖。</div>
+            </div>
+          }
+          style={{ marginBottom: 12 }}
+        />
+        <Row gutter={8}>
+          <Col flex="auto">
+            <Input.Password
+              placeholder="貼上 Power Automate HTTP trigger URL（含 sig=...）"
+              value={tgWebhookUrl}
+              onChange={(e) => setTgWebhookUrl(e.target.value)}
+              autoComplete="off"
+              visibilityToggle
+            />
+          </Col>
+          <Col>
+            <Space>
+              <Button onClick={handleTgSaveUrl}>儲存 URL</Button>
+              <Popconfirm
+                title="從 SharePoint 同步會覆寫目前 Tool Gantt 資料，確定繼續？"
+                onConfirm={handleTgSync}
+                okText="同步"
+                cancelText="取消"
+              >
+                <Button type="primary" icon={<CloudDownloadOutlined />} loading={tgSyncing} disabled={!tgWebhookUrl.trim()}>
+                  從 SharePoint 同步
+                </Button>
+              </Popconfirm>
+            </Space>
+          </Col>
+        </Row>
+        <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
+          {tgLastSyncAt && (
+            <span>最後同步：{new Date(tgLastSyncAt).toLocaleString()}
+              {tgSyncedCount != null && `（${tgSyncedCount} 筆）`}
+            </span>
+          )}
+          {tgLastError && <span style={{ color: '#cf1322' }}> 錯誤：{tgLastError}</span>}
         </div>
       </Card>
 

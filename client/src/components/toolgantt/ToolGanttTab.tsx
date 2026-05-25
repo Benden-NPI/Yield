@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Button, Space, DatePicker, Segmented, Tag, Tooltip, message, Divider,
+  Button, Space, DatePicker, Segmented, Tag, Tooltip, message, Divider, Popconfirm,
 } from 'antd';
 import {
   FileExcelOutlined, ReloadOutlined, CameraOutlined, SortAscendingOutlined,
+  CloudDownloadOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas-pro';
@@ -12,6 +13,8 @@ import { readExcelFile } from './parse';
 import { idbSaveHandle, idbLoadHandle } from './idb';
 import { DEFAULT_TOOLS, DEFAULT_DEADLINE, MILESTONE_PHASES } from './constants';
 import type { ToolRecord, FilterMode, SortMode } from './types';
+import { useToolGanttSync, getToolGanttWebhookUrl } from '../../hooks/useToolGanttSync';
+import { useToolGanttStore } from '../../hooks/useToolGanttStore';
 
 /* ── FS API availability ── */
 const HAS_FS_API = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
@@ -29,7 +32,10 @@ function getToolStatus(t: ToolRecord, deadline: Date): 'normal' | 'tbd' | 'late'
 
 /* ── Component ── */
 const ToolGanttTab: React.FC = () => {
-  const [toolData,   setToolData]   = useState<ToolRecord[] | null>(null);
+  /* ── Shared store (allows Settings tab sync to reach this component) ── */
+  const { records: storeRecords, source: storeSource, setRecords: storeSetRecords } = useToolGanttStore();
+
+  const [localData,  setLocalData]  = useState<ToolRecord[] | null>(null);
   const [fileName,   setFileName]   = useState<string>('');
   const [filter,     setFilter]     = useState<FilterMode>('all');
   const [sortMode,   setSortMode]   = useState<SortMode>('item');
@@ -38,6 +44,27 @@ const ToolGanttTab: React.FC = () => {
   const [msgApi,     msgCtx]        = message.useMessage();
   const handleRef = useRef<FileSystemFileHandle | null>(null);
   const captureRef = useRef<HTMLDivElement>(null);
+
+  // Prefer store records (from SharePoint sync) over local Excel data
+  const toolData = storeRecords ?? localData;
+  const setToolData = useCallback((data: ToolRecord[] | null) => {
+    setLocalData(data);
+    // When loading from Excel file, clear store so it doesn't override
+    useToolGanttStore.setState({ records: null, source: '' });
+  }, []);
+
+  // Sync fileName with store source when store is updated externally
+  useEffect(() => {
+    if (storeRecords && storeSource) setFileName(storeSource);
+  }, [storeRecords, storeSource]);
+
+  /* ── SharePoint sync ── */
+  const [hasSpUrl, setHasSpUrl] = useState(() => !!getToolGanttWebhookUrl());
+  const handleSpData = useCallback((records: ToolRecord[]) => {
+    storeSetRecords(records, 'SharePoint');
+    setHasSpUrl(true);
+  }, [storeSetRecords]);
+  const { sync: spSync, syncing: spSyncing } = useToolGanttSync(handleSpData);
 
   // Restore handle from IDB on mount
   useEffect(() => {
@@ -218,6 +245,30 @@ const ToolGanttTab: React.FC = () => {
                 Screenshot
               </Button>
             </Tooltip>
+
+            {hasSpUrl && (
+              <>
+                <Divider type="vertical" />
+                <Popconfirm
+                  title="從 SharePoint 同步會覆寫目前資料，確定繼續？"
+                  onConfirm={async () => {
+                    try {
+                      const res = await spSync();
+                      msgApi.success(`已從 SharePoint 載入 ${res.count} 筆工具資料`);
+                    } catch (e: unknown) {
+                      const msg = e instanceof Error ? e.message : String(e);
+                      msgApi.error('同步失敗：' + msg);
+                    }
+                  }}
+                  okText="同步"
+                  cancelText="取消"
+                >
+                  <Button size="small" icon={<CloudDownloadOutlined />} loading={spSyncing}>
+                    SharePoint 同步
+                  </Button>
+                </Popconfirm>
+              </>
+            )}
           </Space>
         </div>
 
