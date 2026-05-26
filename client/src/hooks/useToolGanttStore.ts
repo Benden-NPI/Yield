@@ -10,7 +10,7 @@ import type { ToolRecord } from '../components/toolgantt/types';
  */
 
 interface ToolGanttStore {
-  records: ToolRecord[] | null;   // null = not yet loaded (use DEFAULT_TOOLS)
+  records: ToolRecord[] | null;   // null = not yet loaded; load via Power Automate URL sync
   source: string;                  // display label: file name or 'SharePoint'
   setRecords: (records: ToolRecord[], source: string) => void;
   clearRecords: () => void;
