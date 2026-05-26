@@ -20,6 +20,17 @@ const { Title, Text } = Typography;
 
 const App: React.FC = () => {
   const lastUpdatedAt = useYieldStore((s) => s.lastUpdatedAt);
+  const [activeTab, setActiveTab] = React.useState('overview');
+
+  // Allow child components (e.g. ToolGanttTab empty state) to navigate to a tab
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const key = (e as CustomEvent<string>).detail;
+      if (key) setActiveTab(key);
+    };
+    window.addEventListener('yield-nav', handler);
+    return () => window.removeEventListener('yield-nav', handler);
+  }, []);
 
   const items = [
     { key: 'overview',  label: <span><DashboardOutlined /> Overview</span>,            children: <OverviewTab /> },
@@ -68,7 +79,8 @@ const App: React.FC = () => {
 
         <Content style={{ padding: '20px', maxWidth: 1500, margin: '0 auto', width: '100%' }}>
           <Tabs
-            defaultActiveKey="overview"
+            activeKey={activeTab}
+            onChange={setActiveTab}
             items={items}
             size="large"
             tabBarStyle={{

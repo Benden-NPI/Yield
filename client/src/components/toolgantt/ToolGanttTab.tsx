@@ -1,23 +1,17 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
-  Button, Space, DatePicker, Segmented, Tag, Tooltip, message, Divider, Popconfirm,
+  Button, Space, DatePicker, Segmented, Tooltip, message, Divider, Popconfirm, Typography,
 } from 'antd';
 import {
-  FileExcelOutlined, ReloadOutlined, CameraOutlined, SortAscendingOutlined,
-  CloudDownloadOutlined,
+  CameraOutlined, SortAscendingOutlined, CloudDownloadOutlined, SettingOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas-pro';
 import GanttTable from './GanttTable';
-import { readExcelFile } from './parse';
-import { idbSaveHandle, idbLoadHandle } from './idb';
-import { DEFAULT_TOOLS, DEFAULT_DEADLINE, MILESTONE_PHASES } from './constants';
-import type { ToolRecord, FilterMode, SortMode } from './types';
+import { DEFAULT_DEADLINE, MILESTONE_PHASES } from './constants';
+import type { FilterMode, SortMode, ToolRecord } from './types';
 import { useToolGanttSync, getToolGanttWebhookUrl } from '../../hooks/useToolGanttSync';
 import { useToolGanttStore } from '../../hooks/useToolGanttStore';
-
-/* ── FS API availability ── */
-const HAS_FS_API = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 
 /* ── Helper ── */
 function getToolStatus(t: ToolRecord, deadline: Date): 'normal' | 'tbd' | 'late' {
@@ -32,127 +26,22 @@ function getToolStatus(t: ToolRecord, deadline: Date): 'normal' | 'tbd' | 'late'
 
 /* ── Component ── */
 const ToolGanttTab: React.FC = () => {
-  /* ── Shared store (allows Settings tab sync to reach this component) ── */
-  const { records: storeRecords, source: storeSource, setRecords: storeSetRecords } = useToolGanttStore();
+  const { records, source, setRecords } = useToolGanttStore();
 
-  const [localData,  setLocalData]  = useState<ToolRecord[] | null>(null);
-  const [fileName,   setFileName]   = useState<string>('');
-  const [filter,     setFilter]     = useState<FilterMode>('all');
-  const [sortMode,   setSortMode]   = useState<SortMode>('item');
-  const [deadline,   setDeadline]   = useState<string>(DEFAULT_DEADLINE);
-  const [loading,    setLoading]    = useState(false);
-  const [msgApi,     msgCtx]        = message.useMessage();
-  const handleRef = useRef<FileSystemFileHandle | null>(null);
-  const captureRef = useRef<HTMLDivElement>(null);
-
-  // Prefer store records (from SharePoint sync) over local Excel data
-  const toolData = storeRecords ?? localData;
-  const setToolData = useCallback((data: ToolRecord[] | null) => {
-    setLocalData(data);
-    // When loading from Excel file, clear store so it doesn't override
-    useToolGanttStore.setState({ records: null, source: '' });
-  }, []);
-
-  // Sync fileName with store source when store is updated externally
-  useEffect(() => {
-    if (storeRecords && storeSource) setFileName(storeSource);
-  }, [storeRecords, storeSource]);
+  const [filter,   setFilter]   = useState<FilterMode>('all');
+  const [sortMode, setSortMode] = useState<SortMode>('item');
+  const [deadline, setDeadline] = useState<string>(DEFAULT_DEADLINE);
+  const [loading,  setLoading]  = useState(false);
+  const [msgApi,   msgCtx]      = message.useMessage();
+  const captureRef              = useRef<HTMLDivElement>(null);
 
   /* ── SharePoint sync ── */
-  const [hasSpUrl, setHasSpUrl] = useState(() => !!getToolGanttWebhookUrl());
-  const handleSpData = useCallback((records: ToolRecord[]) => {
-    storeSetRecords(records, 'SharePoint');
-    setHasSpUrl(true);
-  }, [storeSetRecords]);
-  const { sync: spSync, syncing: spSyncing } = useToolGanttSync(handleSpData);
+  const handleSpData = useCallback((data: ToolRecord[]) => {
+    setRecords(data, 'SharePoint');
+  }, [setRecords]);
+  const { sync: spSync, syncing: spSyncing, lastSyncAt } = useToolGanttSync(handleSpData);
 
-  // Restore handle from IDB on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const h = await idbLoadHandle();
-        if (!h) return;
-        const perm = await (h as any).queryPermission({ mode: 'read' });
-        if (perm === 'granted') {
-          const file = await (h as any).getFile();
-          const data = await readExcelFile(file);
-          if (data && data.length > 0) {
-            handleRef.current = h;
-            setFileName(file.name);
-            setToolData(data);
-          }
-        } else {
-          // Store handle so Reload can request permission later
-          handleRef.current = h;
-        }
-      } catch { /* no saved handle or permission denied */ }
-    })();
-  }, []);
-
-  /* ── File operations ── */
-  const openExcel = useCallback(async () => {
-    if (HAS_FS_API) {
-      try {
-        const [h] = await (window as any).showOpenFilePicker({
-          types: [{ description: 'Excel', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }],
-        }) as [FileSystemFileHandle];
-        const file = await (h as any).getFile();
-        const data = await readExcelFile(file);
-        if (!data || data.length === 0) { msgApi.error('Cannot parse Excel data'); return; }
-        handleRef.current = h;
-        setFileName(file.name);
-        setToolData(data);
-        await idbSaveHandle(h);
-      } catch (e: any) {
-        if (e?.name !== 'AbortError') msgApi.error('Cannot open file: ' + e?.message);
-      }
-    } else {
-      // Fallback: <input>
-      const inp = document.createElement('input');
-      inp.type = 'file'; inp.accept = '.xlsx';
-      inp.onchange = async () => {
-        const file = inp.files?.[0]; if (!file) return;
-        const data = await readExcelFile(file);
-        if (!data || data.length === 0) { msgApi.error('Cannot parse Excel data'); return; }
-        handleRef.current = null; // no FS handle in fallback
-        setFileName(file.name);
-        setToolData(data);
-      };
-      inp.click();
-    }
-  }, [msgApi]);
-
-  const reloadExcel = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Try to recover handle from IDB if not in memory
-      if (!handleRef.current) {
-        const h = await idbLoadHandle().catch(() => null);
-        if (h) {
-          const perm = await (h as any).requestPermission({ mode: 'read' });
-          if (perm === 'granted') handleRef.current = h;
-        }
-      }
-      if (!handleRef.current) { await openExcel(); setLoading(false); return; }
-
-      // Ensure permission
-      const perm = await (handleRef.current as any).queryPermission({ mode: 'read' });
-      if (perm !== 'granted') {
-        const p2 = await (handleRef.current as any).requestPermission({ mode: 'read' });
-        if (p2 !== 'granted') { setLoading(false); return; }
-      }
-
-      const file = await (handleRef.current as any).getFile();
-      const data = await readExcelFile(file);
-      if (!data || data.length === 0) { msgApi.error('Cannot parse Excel data'); setLoading(false); return; }
-      setFileName(file.name);
-      setToolData(data);
-      msgApi.success('Reloaded');
-    } catch (e: any) {
-      msgApi.error('Reload failed: ' + e?.message);
-    }
-    setLoading(false);
-  }, [msgApi, openExcel]);
+  const hasUrl = !!getToolGanttWebhookUrl();
 
   /* ── Screenshot ── */
   const takeScreenshot = useCallback(async () => {
@@ -165,20 +54,75 @@ const ToolGanttTab: React.FC = () => {
       link.download = `tool-gantt-${new Date().toISOString().slice(0, 10)}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-    } catch (e: any) {
-      msgApi.error('Screenshot failed: ' + e?.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      msgApi.error('Screenshot failed: ' + msg);
     }
     setLoading(false);
   }, [msgApi]);
 
   /* ── Derived display data ── */
-  const allTools   = toolData ?? DEFAULT_TOOLS;
-  const deadlineD  = (() => { const d = new Date(deadline); d.setHours(0, 0, 0, 0); return d; })();
-  const counts     = { all: allTools.length, normal: 0, tbd: 0, late: 0 };
-  for (const t of allTools) counts[getToolStatus(t, deadlineD)]++;
+  const deadlineD = (() => { const d = new Date(deadline); d.setHours(0, 0, 0, 0); return d; })();
+  const deadlineFmt = `${deadlineD.getMonth() + 1}/${deadlineD.getDate()}`;
 
-  let filtered = filter === 'all' ? [...allTools] : allTools.filter(t => getToolStatus(t, deadlineD) === filter);
+  if (!records) {
+    /* ── Empty state ── */
+    return (
+      <>
+        {msgCtx}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px', gap: 16 }}>
+          <CloudDownloadOutlined style={{ fontSize: 48, color: '#D1D5DB' }} />
+          <Typography.Title level={4} style={{ color: '#6B7280', margin: 0 }}>
+            尚未載入 Tool PO Tracking 資料
+          </Typography.Title>
+          <Typography.Text type="secondary" style={{ textAlign: 'center', maxWidth: 420 }}>
+            請先到 <strong>Settings</strong> 頁面設定 Power Automate Webhook URL，
+            再點「從 SharePoint 同步」載入資料。
+          </Typography.Text>
+          <Space>
+            {hasUrl ? (
+              <Popconfirm
+                title="從 SharePoint 同步資料？"
+                onConfirm={async () => {
+                  try {
+                    const res = await spSync();
+                    msgApi.success(`已載入 ${res.count} 筆工具資料`);
+                  } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    msgApi.error('同步失敗：' + msg);
+                  }
+                }}
+                okText="同步"
+                cancelText="取消"
+              >
+                <Button type="primary" icon={<CloudDownloadOutlined />} loading={spSyncing}>
+                  從 SharePoint 同步
+                </Button>
+              </Popconfirm>
+            ) : (
+              <Tooltip title="請先在 Settings 頁面貼上 Webhook URL">
+                <Button type="primary" icon={<CloudDownloadOutlined />} disabled>
+                  從 SharePoint 同步
+                </Button>
+              </Tooltip>
+            )}
+            <Button icon={<SettingOutlined />} onClick={() => {
+              // Trigger tab switch to Settings via custom event
+              window.dispatchEvent(new CustomEvent('yield-nav', { detail: 'settings' }));
+            }}>
+              前往 Settings
+            </Button>
+          </Space>
+        </div>
+      </>
+    );
+  }
 
+  /* ── Loaded state ── */
+  const counts = { all: records.length, normal: 0, tbd: 0, late: 0 };
+  for (const t of records) counts[getToolStatus(t, deadlineD)]++;
+
+  let filtered = filter === 'all' ? [...records] : records.filter(t => getToolStatus(t, deadlineD) === filter);
   if (sortMode === 'qualify') {
     filtered = filtered.sort((a, b) => {
       const da = a.qualifyDone, db = b.qualifyDone;
@@ -189,9 +133,6 @@ const ToolGanttTab: React.FC = () => {
     });
   }
 
-  const connected = !!fileName;
-  const deadlineFmt = `${deadlineD.getMonth() + 1}/${deadlineD.getDate()}`;
-
   return (
     <>
       {msgCtx}
@@ -200,29 +141,16 @@ const ToolGanttTab: React.FC = () => {
         {/* ── Toolbar ── */}
         <div style={toolbarStyle}>
           <Space size={8} wrap>
-            {/* File status */}
+            {/* Source indicator */}
             <Space size={6}>
-              <span style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: connected ? '#22C55E' : '#EF4444',
-                display: 'inline-block',
-              }} />
-              <span style={{ fontSize: 12, color: connected ? '#374151' : '#9CA3AF' }}>
-                {connected ? fileName : 'Using default data'}
-              </span>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', display: 'inline-block' }} />
+              <span style={{ fontSize: 12, color: '#374151' }}>{source}</span>
+              {lastSyncAt && (
+                <span style={{ fontSize: 11, color: '#9CA3AF' }}>
+                  · 最後同步 {new Date(lastSyncAt).toLocaleTimeString()}
+                </span>
+              )}
             </Space>
-            <Divider type="vertical" />
-
-            {/* File buttons */}
-            <Button size="small" icon={<FileExcelOutlined />} onClick={openExcel}>
-              {connected ? 'Change Excel' : 'Open Excel'}
-            </Button>
-            {connected && (
-              <Button size="small" icon={<ReloadOutlined />} onClick={reloadExcel} loading={loading}>
-                Reload
-              </Button>
-            )}
-
             <Divider type="vertical" />
 
             {/* Deadline */}
@@ -246,50 +174,52 @@ const ToolGanttTab: React.FC = () => {
               </Button>
             </Tooltip>
 
-            {hasSpUrl && (
-              <>
-                <Divider type="vertical" />
-                <Popconfirm
-                  title="從 SharePoint 同步會覆寫目前資料，確定繼續？"
-                  onConfirm={async () => {
-                    try {
-                      const res = await spSync();
-                      msgApi.success(`已從 SharePoint 載入 ${res.count} 筆工具資料`);
-                    } catch (e: unknown) {
-                      const msg = e instanceof Error ? e.message : String(e);
-                      msgApi.error('同步失敗：' + msg);
-                    }
-                  }}
-                  okText="同步"
-                  cancelText="取消"
-                >
-                  <Button size="small" icon={<CloudDownloadOutlined />} loading={spSyncing}>
-                    SharePoint 同步
-                  </Button>
-                </Popconfirm>
-              </>
+            <Divider type="vertical" />
+
+            {/* SharePoint sync */}
+            {hasUrl ? (
+              <Popconfirm
+                title="從 SharePoint 同步會覆寫目前資料，確定繼續？"
+                onConfirm={async () => {
+                  try {
+                    const res = await spSync();
+                    msgApi.success(`已從 SharePoint 載入 ${res.count} 筆工具資料`);
+                  } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    msgApi.error('同步失敗：' + msg);
+                  }
+                }}
+                okText="同步"
+                cancelText="取消"
+              >
+                <Button size="small" icon={<CloudDownloadOutlined />} loading={spSyncing}>
+                  SharePoint 同步
+                </Button>
+              </Popconfirm>
+            ) : (
+              <Tooltip title="請先在 Settings 頁面貼上 Webhook URL">
+                <Button size="small" icon={<CloudDownloadOutlined />} disabled>
+                  SharePoint 同步
+                </Button>
+              </Tooltip>
             )}
           </Space>
         </div>
 
         {/* ── Filter + Sort bar ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '4px 0' }}>
-          {/* Filter */}
           <Segmented
             size="small"
             value={filter}
             onChange={v => setFilter(v as FilterMode)}
             options={[
-              { label: `All (${counts.all})`,             value: 'all'    },
-              { label: `Normal (${counts.normal})`,        value: 'normal' },
-              { label: `TBD (${counts.tbd})`,              value: 'tbd'    },
-              { label: `After Deadline (${counts.late})`,  value: 'late'   },
+              { label: `All (${counts.all})`,            value: 'all'    },
+              { label: `Normal (${counts.normal})`,       value: 'normal' },
+              { label: `TBD (${counts.tbd})`,             value: 'tbd'    },
+              { label: `After Deadline (${counts.late})`, value: 'late'   },
             ]}
           />
-
           <Divider type="vertical" style={{ height: 20, margin: 0 }} />
-
-          {/* Sort */}
           <Space size={6}>
             <SortAscendingOutlined style={{ color: '#9CA3AF', fontSize: 14 }} />
             <span style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600 }}>Sort:</span>
@@ -307,7 +237,7 @@ const ToolGanttTab: React.FC = () => {
 
         {/* ── Legend + Gantt (captured for screenshot) ── */}
         <div ref={captureRef} style={{ background: '#fff', padding: '10px 14px', borderRadius: 8, border: '1px solid #E5E7EB' }}>
-          {/* Legend row 1: status + reference lines */}
+          {/* Legend row 1 */}
           <div style={legendRowStyle}>
             {[
               { dot: '#374151', label: 'Normal' },
@@ -362,14 +292,6 @@ const ToolGanttTab: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Status tags */}
-        {!toolData && (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Tag color="orange">Using built-in default data</Tag>
-            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Open an Excel file with "Tool", "Item", "Move-In", "Setup", "Tuning", "Qualify" columns</span>
-          </div>
-        )}
       </div>
     </>
   );
