@@ -3,9 +3,30 @@ import type { StationRecord } from '../components/toolgantt/types';
 
 /**
  * Zustand store for Tool PO Tracking (station-by-station Gantt).
- * Station data: not persisted — comes from SharePoint sync via Power Automate.
- * Completed stations: persisted to localStorage so marks survive page refresh.
+ *
+ * stations + source → persisted to localStorage so data survives page refresh.
+ * completedStations  → persisted to localStorage (separate key).
  */
+
+/* ── Station data persistence ── */
+const STATIONS_KEY = 'tool_gantt_stations';
+
+function loadStations(): { stations: StationRecord[] | null; source: string } {
+  try {
+    const raw = localStorage.getItem(STATIONS_KEY);
+    if (!raw) return { stations: null, source: '' };
+    const parsed = JSON.parse(raw) as { stations: StationRecord[]; source: string };
+    if (!Array.isArray(parsed.stations)) return { stations: null, source: '' };
+    return { stations: parsed.stations, source: parsed.source ?? '' };
+  } catch { return { stations: null, source: '' }; }
+}
+
+function saveStations(stations: StationRecord[] | null, source: string): void {
+  try {
+    if (stations === null) localStorage.removeItem(STATIONS_KEY);
+    else localStorage.setItem(STATIONS_KEY, JSON.stringify({ stations, source }));
+  } catch {}
+}
 
 /* ── Completed-station persistence ── */
 const COMPLETED_KEY = 'tool_gantt_completed_stations';
@@ -32,13 +53,22 @@ interface ToolGanttStore {
   clearCompleted: () => void;
 }
 
+const { stations: initStations, source: initSource } = loadStations();
+
 export const useToolGanttStore = create<ToolGanttStore>((set) => ({
-  stations: null,
-  source: '',
+  stations: initStations,
+  source: initSource,
   completedStations: loadCompleted(),
 
-  setStations: (stations, source) => set({ stations, source }),
-  clearStations: () => set({ stations: null, source: '' }),
+  setStations: (stations, source) => {
+    saveStations(stations, source);
+    set({ stations, source });
+  },
+
+  clearStations: () => {
+    saveStations(null, '');
+    set({ stations: null, source: '' });
+  },
 
   toggleCompleted: (name) =>
     set((state) => {
