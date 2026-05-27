@@ -115,6 +115,20 @@ function parseSingleDate(s: string): string | null {
   s = s.trim();
   if (!s || /^(pending|tbd|n\/a|nan|—|-|#|00:00:00)/i.test(s)) return null;
 
+  // Excel serial number (e.g. 46000). Power Automate sometimes returns raw
+  // numeric cell values instead of formatted date strings.
+  if (/^\d{5}$/.test(s)) {
+    const serial = parseInt(s, 10);
+    if (serial > 40000 && serial < 60000) {
+      const d = new Date((serial - 25569) * 86_400_000);
+      const y = d.getUTCFullYear();
+      const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(d.getUTCDate()).padStart(2, '0');
+      const ds = `${y}-${mo}-${dd}`;
+      return ds >= '2020-01-01' && ds <= '2035-12-31' ? ds : null;
+    }
+  }
+
   const isoM = /(\d{4})-(\d{2})-(\d{2})/.exec(s);
   if (isoM) {
     const d = `${isoM[1]}-${isoM[2]}-${isoM[3]}`;
@@ -168,13 +182,17 @@ function parseDate(val: unknown): string | null {
   return last;
 }
 
-/** Extract station type and numeric order from a station label. */
-function parseStationInfo(station: string): { stationType: 'coldplate' | 'loop'; stationNo: number } {
-  const cp = /^ColdPlate\s*(\d+)/i.exec(station);
+/**
+ * Extract station type and numeric order from a station label.
+ * Returns null for non-matching names (Source, IQC, REL Lab, offline, etc.)
+ * so they are filtered out of the Gantt.
+ */
+function parseStationInfo(station: string): { stationType: 'coldplate' | 'loop'; stationNo: number } | null {
+  const cp = /ColdPlate\s*(\d+)/i.exec(station);
   if (cp) return { stationType: 'coldplate', stationNo: parseInt(cp[1]) };
-  const asm = /^Assembly\s*(\d+)/i.exec(station);
+  const asm = /Assembly\s*(\d+)/i.exec(station);
   if (asm) return { stationType: 'loop', stationNo: parseInt(asm[1]) };
-  return { stationType: 'coldplate', stationNo: 0 };
+  return null; // Unrecognised station (Source, IQC, REL Lab, offline …) → skip
 }
 
 /**
@@ -191,7 +209,9 @@ export function mapStationRows(rows: SPRow[]): StationRecord[] {
       if (!stationVal || !String(stationVal).trim()) return null;
 
       const station = String(stationVal).trim();
-      const { stationType, stationNo } = parseStationInfo(station);
+      const info = parseStationInfo(station);
+      if (!info) return null; // Skip Source, IQC, REL Lab, offline, etc.
+      const { stationType, stationNo } = info;
 
       const stepVal = pickKey(row, ['Process Step', 'ProcessStep', 'Step', 'Process']);
       const moveInVal  = pickKey(row, ['Move-in day', 'Move-in Day', 'Moveinday', 'MoveIn', 'Move-in', 'ETD', 'ETA']);

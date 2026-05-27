@@ -162,7 +162,7 @@ const GanttTable: React.FC<Props> = ({ stations, deadline }) => {
           <thead>
             <tr>
               <th style={thStationStyle} rowSpan={2}>
-                Station / Process
+                Process / Station
               </th>
               {months.map((m, i) => (
                 <th key={i} colSpan={m.span} style={thMonthStyle}>
@@ -226,10 +226,10 @@ const GanttTable: React.FC<Props> = ({ stations, deadline }) => {
                 <tr key={s.station}>
                   {/* Left sticky cell */}
                   <td style={tdStationStyle}>
-                    <div style={stationNameStyle}>{s.station}</div>
                     {s.processStep && (
                       <div style={processStepStyle}>{s.processStep}</div>
                     )}
+                    <div style={stationNameStyle}>{s.station}</div>
                   </td>
 
                   {/* Gantt cells */}
@@ -457,18 +457,20 @@ const tdStationStyle: React.CSSProperties = {
 };
 
 const stationNameStyle: React.CSSProperties = {
-  fontWeight: 700,
-  fontSize: '.75rem',
-  color: '#1F2937',
-  lineHeight: 1.3,
+  fontSize: '.6rem',
+  color: '#9CA3AF',
+  marginTop: 2,
+  lineHeight: 1.25,
   whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 };
 
 const processStepStyle: React.CSSProperties = {
-  fontSize: '.62rem',
-  color: '#9CA3AF',
-  marginTop: 1,
-  lineHeight: 1.25,
+  fontWeight: 700,
+  fontSize: '.76rem',
+  color: '#1F2937',
+  lineHeight: 1.3,
   whiteSpace: 'normal',
   wordBreak: 'break-word',
 };
