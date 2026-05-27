@@ -102,10 +102,12 @@ interface TipState {
 interface Props {
   stations: StationRecord[];
   deadline: string;
+  completedStations: Set<string>;
+  onToggleCompleted: (stationName: string) => void;
 }
 
 /* ── Component ── */
-const GanttTable: React.FC<Props> = ({ stations, deadline }) => {
+const GanttTable: React.FC<Props> = ({ stations, deadline, completedStations, onToggleCompleted }) => {
   const headRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [tip, setTip] = useState<TipState | null>(null);
@@ -221,14 +223,28 @@ const GanttTable: React.FC<Props> = ({ stations, deadline }) => {
 
               /* ── Station row ── */
               const { station: s } = row;
+              const done = completedStations.has(s.station);
 
               return (
-                <tr key={s.station}>
+                <tr
+                  key={s.station}
+                  onClick={() => onToggleCompleted(s.station)}
+                  style={{ cursor: 'pointer', background: done ? '#F3F4F6' : '#fff' }}
+                  title={done ? '點擊取消完成' : '點擊標記為完成'}
+                >
                   {/* Left sticky cell */}
-                  <td style={tdStationStyle}>
-                    <div style={stationNameStyle}>{s.station}</div>
+                  <td style={{ ...tdStationStyle, background: done ? '#F3F4F6' : '#fff' }}>
+                    {/* Checkmark indicator when done */}
+                    {done && (
+                      <div style={checkmarkStyle}>✓</div>
+                    )}
+                    <div style={{ ...stationNameStyle, color: done ? '#D1D5DB' : stationNameStyle.color }}>
+                      {s.station}
+                    </div>
                     {s.processStep && (
-                      <div style={processStepStyle}>{s.processStep}</div>
+                      <div style={{ ...processStepStyle, color: done ? '#D1D5DB' : processStepStyle.color }}>
+                        {s.processStep}
+                      </div>
                     )}
                   </td>
 
@@ -311,7 +327,8 @@ const GanttTable: React.FC<Props> = ({ stations, deadline }) => {
                             ...phaseBarStyle,
                             left: `${barL}%`,
                             width: `${barR - barL}%`,
-                            background: period.color,
+                            background: done ? '#9CA3AF' : period.color,
+                            opacity: done ? 0.25 : 0.65,
                           }}
                           data-tip-type="period"
                           data-tip-title={period.label}
@@ -334,7 +351,7 @@ const GanttTable: React.FC<Props> = ({ stations, deadline }) => {
                           style={{
                             ...msDiamondStyle,
                             left: `${pct}%`,
-                            background: phase.dot,
+                            background: done ? '#C4C4C4' : phase.dot,
                           }}
                           data-tip-type="milestone"
                           data-tip-title={phase.label}
@@ -344,7 +361,7 @@ const GanttTable: React.FC<Props> = ({ stations, deadline }) => {
                     });
 
                     return (
-                      <td key={wi} style={tdCellStyle}>
+                      <td key={wi} style={{ ...tdCellStyle, background: done ? '#F3F4F6' : undefined }}>
                         {elems.length > 0 && (
                           <div
                             style={{
@@ -535,6 +552,17 @@ const msDiamondStyle: React.CSSProperties = {
   transform: 'translateX(-50%) translateY(-50%) rotate(45deg)',
   zIndex: 3,
   cursor: 'default',
+};
+
+const checkmarkStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: 4,
+  right: 6,
+  fontSize: '.6rem',
+  fontWeight: 700,
+  color: '#10B981',
+  lineHeight: 1,
+  userSelect: 'none',
 };
 
 const tooltipStyle: React.CSSProperties = {

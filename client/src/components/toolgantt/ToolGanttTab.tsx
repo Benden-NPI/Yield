@@ -61,7 +61,7 @@ function showSyncError(msgApi: MsgApi, rawMsg: string) {
 
 /* ── Component ── */
 const ToolGanttTab: React.FC = () => {
-  const { stations, source, setStations } = useToolGanttStore();
+  const { stations, source, setStations, completedStations, toggleCompleted } = useToolGanttStore();
 
   const [deadline, setDeadline] = useState<string>(DEFAULT_DEADLINE);
   const [loading, setLoading] = useState(false);
@@ -431,7 +431,12 @@ const ToolGanttTab: React.FC = () => {
                   borderRadius: 6,
                 }}
               >
-                <GanttTable stations={stations} deadline={deadline} />
+                <GanttTable
+                  stations={stations}
+                  deadline={deadline}
+                  completedStations={completedStations}
+                  onToggleCompleted={toggleCompleted}
+                />
               </div>
             </GanttErrorBoundary>
           )}
