@@ -7,7 +7,7 @@ import { METRIC_LABELS, METRIC_UNITS, YIELD_METRICS } from '../../types/yield';
 import { useSharePointSync, getStoredWebhookUrl, setStoredWebhookUrl } from '../../hooks/useSharePointSync';
 import { useToolGanttSync, getToolGanttWebhookUrl, setToolGanttWebhookUrl } from '../../hooks/useToolGanttSync';
 import { useToolGanttStore } from '../../hooks/useToolGanttStore';
-import type { ToolRecord } from '../toolgantt/types';
+import type { StationRecord } from '../toolgantt/types';
 
 const { Title, Text } = Typography;
 
@@ -19,12 +19,12 @@ export const SettingsTab: React.FC = () => {
 
   /* Tool Gantt SharePoint */
   const [tgWebhookUrl, setTgWebhookUrl] = React.useState<string>(() => getToolGanttWebhookUrl());
-  const storeSetRecords = useToolGanttStore((s) => s.setRecords);
-  const handleTgData = React.useCallback((records: ToolRecord[]) => {
-    storeSetRecords(records, 'SharePoint');
-  }, [storeSetRecords]);
+  const storeSetStations = useToolGanttStore((s) => s.setStations);
+  const handleTgData = React.useCallback((stations: StationRecord[]) => {
+    storeSetStations(stations, 'SharePoint');
+  }, [storeSetStations]);
   const { sync: tgSync, syncing: tgSyncing, lastSyncAt: tgLastSyncAt, lastError: tgLastError } = useToolGanttSync(handleTgData);
-  const tgSyncedCount = useToolGanttStore((s) => s.records?.length ?? null);
+  const tgSyncedCount = useToolGanttStore((s) => s.stations?.length ?? null);
 
   React.useEffect(() => {
     form.setFieldsValue(settings);
@@ -70,7 +70,7 @@ export const SettingsTab: React.FC = () => {
     try {
       setToolGanttWebhookUrl(tgWebhookUrl.trim());
       const result = await tgSync(tgWebhookUrl.trim());
-      message.success(`已從 SharePoint 載入 ${result.count} 筆工具資料，請切換到 Tool PO Tracking 頁面查看`);
+      message.success(`已從 SharePoint 載入 ${result.count} 個站別資料，請切換到 Tool PO Tracking 頁面查看`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       message.error(`同步失敗：${msg}`);
@@ -140,7 +140,7 @@ export const SettingsTab: React.FC = () => {
             <div style={{ fontSize: 12 }}>
               <div>• 按下「從 SharePoint 同步」會 <b>覆寫</b> Tool Gantt 的資料（本機 session）。</div>
               <div>• Webhook URL 只存在這台瀏覽器的 localStorage，<b>不會 commit 進 source code</b>。</div>
-              <div>• SharePoint 表格需要包含：<code>Item</code>、<code>Tool</code>、<code>Vendor</code>、<code>Qty</code>、<code>Move-In</code>、<code>Setup</code>、<code>Tuning</code>、<code>Qualify</code> 欄位。</div>
+              <div>• Control Plan Excel 需要包含：<code>Station for 300x300</code>、<code>Process Step</code>、<code>Move-in day</code>、<code>Setup Completed (HW)</code>、<code>Tuning Completed (Short loop)</code>、<code>Tuning Criteria</code>、<code>Qualify Completed (Qual lot)</code>、<code>Qualify Criteria</code> 欄位。</div>
               <div>• 同步後切換到 <b>Tool PO Tracking</b> 頁面即可看到更新的 Gantt 圖。</div>
             </div>
           }
@@ -175,7 +175,7 @@ export const SettingsTab: React.FC = () => {
         <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
           {tgLastSyncAt && (
             <span>最後同步：{new Date(tgLastSyncAt).toLocaleString()}
-              {tgSyncedCount != null && `（${tgSyncedCount} 筆）`}
+              {tgSyncedCount != null && `（${tgSyncedCount} 個站別）`}
             </span>
           )}
           {tgLastError && <span style={{ color: '#cf1322' }}> 錯誤：{tgLastError}</span>}
