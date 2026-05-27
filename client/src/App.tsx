@@ -65,7 +65,9 @@ const App: React.FC = () => {
             <Title level={4} style={{ color: '#fff', margin: 0 }}>
               Yield Management System
             </Title>
-            <Tag color="blue" style={{ fontWeight: 600 }}>{APP_NAME} {APP_VERSION}</Tag>
+            <Tag color="geekblue" style={{ fontWeight: 700, fontSize: 12, letterSpacing: '.3px' }}>
+              {APP_VERSION}
+            </Tag>
           </Space>
           <Space size={16} align="center">
             {lastUpdatedAt && (

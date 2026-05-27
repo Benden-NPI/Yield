@@ -1,5 +1,5 @@
 export const APP_NAME = 'Yield';
-export const APP_VERSION = '1.0.12';
+export const APP_VERSION = 'v1.10.0';
 
 export type Shift = 'A' | 'B' | 'C';
 
