@@ -118,19 +118,19 @@ function parseSingleDate(s: string): string | null {
   const isoM = /(\d{4})-(\d{2})-(\d{2})/.exec(s);
   if (isoM) {
     const d = `${isoM[1]}-${isoM[2]}-${isoM[3]}`;
-    return d >= '2020-01-01' ? d : null;
+    return d >= '2020-01-01' && d <= '2035-12-31' ? d : null;
   }
   // yyyy/mm/dd
   const ymdM = /(\d{4})[\/](\d{1,2})[\/](\d{1,2})/.exec(s);
   if (ymdM) {
     const d = `${ymdM[1]}-${ymdM[2].padStart(2,'0')}-${ymdM[3].padStart(2,'0')}`;
-    return d >= '2020-01-01' ? d : null;
+    return d >= '2020-01-01' && d <= '2035-12-31' ? d : null;
   }
   // M/D/YYYY
   const mdyM = /(\d{1,2})[\/](\d{1,2})[\/](\d{4})/.exec(s);
   if (mdyM) {
     const d = `${mdyM[3]}-${mdyM[1].padStart(2,'0')}-${mdyM[2].padStart(2,'0')}`;
-    return d >= '2020-01-01' ? d : null;
+    return d >= '2020-01-01' && d <= '2035-12-31' ? d : null;
   }
   // M/D (current year)
   const mdM = /^(\d{1,2})[\/](\d{1,2})$/.exec(s);
@@ -145,7 +145,7 @@ function parseSingleDate(s: string): string | null {
     const mo = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
     const ds = `${y}-${mo}-${dd}`;
-    return ds >= '2020-01-01' ? ds : null;
+    return ds >= '2020-01-01' && ds <= '2035-12-31' ? ds : null;
   }
   return null;
 }

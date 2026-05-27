@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState, Component } from 'react';
 import {
   Button, Space, DatePicker, Tooltip, message, Divider, Popconfirm, Typography,
 } from 'antd';
@@ -10,6 +10,34 @@ import { DEFAULT_DEADLINE, MILESTONE_PHASES, MILESTONE_PERIODS } from './constan
 import type { StationRecord } from './types';
 import { useToolGanttSync, getToolGanttWebhookUrl } from '../../hooks/useToolGanttSync';
 import { useToolGanttStore } from '../../hooks/useToolGanttStore';
+
+/* ── Error boundary: catches GanttTable render crashes ── */
+interface EBState { error: string | null }
+class GanttErrorBoundary extends Component<{ children: React.ReactNode }, EBState> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(err: Error): EBState {
+    return { error: err.message };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: '24px 16px', background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 6 }}>
+          <strong style={{ color: '#cf1322' }}>Gantt 圖表發生錯誤：</strong>
+          <pre style={{ marginTop: 8, fontSize: 12, color: '#434343', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+            {this.state.error}
+          </pre>
+          <div style={{ marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
+            請開啟 DevTools Console（F12）查看詳細錯誤，或清除資料後重新同步。
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /* ── Helper: show multi-line error message ── */
 type MsgApi = ReturnType<typeof message.useMessage>[0];
@@ -395,15 +423,17 @@ const ToolGanttTab: React.FC = () => {
               No station data
             </div>
           ) : (
-            <div
-              style={{
-                overflow: 'hidden',
-                border: '1px solid #E5E7EB',
-                borderRadius: 6,
-              }}
-            >
-              <GanttTable stations={stations} deadline={deadline} />
-            </div>
+            <GanttErrorBoundary>
+              <div
+                style={{
+                  overflow: 'hidden',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 6,
+                }}
+              >
+                <GanttTable stations={stations} deadline={deadline} />
+              </div>
+            </GanttErrorBoundary>
           )}
         </div>
       </div>

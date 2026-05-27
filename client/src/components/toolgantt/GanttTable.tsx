@@ -6,6 +6,7 @@ import { MILESTONE_PHASES, MILESTONE_PERIODS } from './constants';
 const DAY = 86_400_000;
 const STATION_COL_W = 240;
 const WEEK_W = 28;
+const MAX_WEEKS = 130; // ~2.5 years; prevents runaway ranges from bad date data
 
 /* ── Date / layout helpers ── */
 function buildWeeks(start: Date, end: Date): Date[] {
@@ -69,7 +70,12 @@ function computeRange(stations: StationRecord[]) {
   const end = new Date(maxT);
   end.setMonth(end.getMonth() + 2);
   end.setDate(1);
-  const weeks = buildWeeks(start, end);
+  let weeks = buildWeeks(start, end);
+  if (weeks.length > MAX_WEEKS) {
+    weeks = weeks.slice(0, MAX_WEEKS); // safety cap
+    const cappedEnd = new Date(weeks[weeks.length - 1].getTime() + 7 * DAY);
+    return { weeks, months: buildMonths(start, cappedEnd, weeks) };
+  }
   return { weeks, months: buildMonths(start, end, weeks) };
 }
 
