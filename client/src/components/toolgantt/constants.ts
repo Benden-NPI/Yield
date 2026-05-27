@@ -26,4 +26,4 @@ export const MILESTONE_PERIODS: PeriodDef[] = [
   },
 ];
 
-export const DEFAULT_DEADLINE = '2026-09-30';
+export const DEFAULT_DEADLINE = '2026-06-30';
