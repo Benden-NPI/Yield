@@ -4,8 +4,11 @@ import type { StationRecord } from '../components/toolgantt/types';
 /**
  * Zustand store for Tool PO Tracking (station-by-station Gantt).
  *
- * stations + source → persisted to localStorage so data survives page refresh.
- * completedStations  → persisted to localStorage (separate key).
+ * stations + source      → persisted to localStorage (survives page refresh).
+ * completedElements      → per-element (diamond / bar) completed marks,
+ *                          persisted to localStorage.
+ *                          Key format: "<stationName>|ms|<phaseKey>"  (milestone diamond)
+ *                                      "<stationName>|bar|<periodIdx>" (period bar)
  */
 
 /* ── Station data persistence ── */
@@ -28,29 +31,29 @@ function saveStations(stations: StationRecord[] | null, source: string): void {
   } catch {}
 }
 
-/* ── Completed-station persistence ── */
-const COMPLETED_KEY = 'tool_gantt_completed_stations';
+/* ── Per-element completed marks ── */
+const ELEMENTS_KEY = 'tool_gantt_completed_elements';
 
-function loadCompleted(): Set<string> {
+function loadElements(): Set<string> {
   try {
-    const raw = localStorage.getItem(COMPLETED_KEY);
+    const raw = localStorage.getItem(ELEMENTS_KEY);
     return new Set(raw ? (JSON.parse(raw) as string[]) : []);
   } catch { return new Set(); }
 }
 
-function saveCompleted(s: Set<string>): void {
-  try { localStorage.setItem(COMPLETED_KEY, JSON.stringify([...s])); } catch {}
+function saveElements(s: Set<string>): void {
+  try { localStorage.setItem(ELEMENTS_KEY, JSON.stringify([...s])); } catch {}
 }
 
 /* ── Store interface ── */
 interface ToolGanttStore {
   stations: StationRecord[] | null;
   source: string;
-  completedStations: Set<string>;
+  completedElements: Set<string>;
   setStations: (stations: StationRecord[], source: string) => void;
   clearStations: () => void;
-  toggleCompleted: (stationName: string) => void;
-  clearCompleted: () => void;
+  toggleElement: (key: string) => void;
+  clearElements: () => void;
 }
 
 const { stations: initStations, source: initSource } = loadStations();
@@ -58,7 +61,7 @@ const { stations: initStations, source: initSource } = loadStations();
 export const useToolGanttStore = create<ToolGanttStore>((set) => ({
   stations: initStations,
   source: initSource,
-  completedStations: loadCompleted(),
+  completedElements: loadElements(),
 
   setStations: (stations, source) => {
     saveStations(stations, source);
@@ -70,17 +73,17 @@ export const useToolGanttStore = create<ToolGanttStore>((set) => ({
     set({ stations: null, source: '' });
   },
 
-  toggleCompleted: (name) =>
+  toggleElement: (key) =>
     set((state) => {
-      const next = new Set(state.completedStations);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      saveCompleted(next);
-      return { completedStations: next };
+      const next = new Set(state.completedElements);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      saveElements(next);
+      return { completedElements: next };
     }),
 
-  clearCompleted: () => {
-    saveCompleted(new Set());
-    set({ completedStations: new Set() });
+  clearElements: () => {
+    saveElements(new Set());
+    set({ completedElements: new Set() });
   },
 }));
