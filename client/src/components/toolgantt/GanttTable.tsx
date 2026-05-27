@@ -156,13 +156,13 @@ const GanttTable: React.FC<Props> = ({ stations, deadline }) => {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* ── Frozen header ── */}
-      <div ref={headRef} style={{ overflow: 'hidden' }}>
+      {/* ── Frozen header — sticky so it stays visible when scrolling down ── */}
+      <div ref={headRef} style={{ overflow: 'hidden', position: 'sticky', top: 0, zIndex: 10, background: '#F8FAFC' }}>
         <table style={tableStyle}>
           <thead>
             <tr>
               <th style={thStationStyle} rowSpan={2}>
-                Process / Station
+                Station / Process
               </th>
               {months.map((m, i) => (
                 <th key={i} colSpan={m.span} style={thMonthStyle}>
@@ -226,10 +226,10 @@ const GanttTable: React.FC<Props> = ({ stations, deadline }) => {
                 <tr key={s.station}>
                   {/* Left sticky cell */}
                   <td style={tdStationStyle}>
+                    <div style={stationNameStyle}>{s.station}</div>
                     {s.processStep && (
                       <div style={processStepStyle}>{s.processStep}</div>
                     )}
-                    <div style={stationNameStyle}>{s.station}</div>
                   </td>
 
                   {/* Gantt cells */}
