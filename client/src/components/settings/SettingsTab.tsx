@@ -66,11 +66,27 @@ export const SettingsTab: React.FC = () => {
     message.success('Tool Gantt Webhook URL 已儲存');
   };
 
+  const navToToolTab = () =>
+    window.dispatchEvent(new CustomEvent('yield-nav', { detail: 'toolgantt' }));
+
   const handleTgSync = async () => {
     try {
       setToolGanttWebhookUrl(tgWebhookUrl.trim());
       const result = await tgSync(tgWebhookUrl.trim());
-      message.success(`已從 SharePoint 載入 ${result.count} 個站別資料，請切換到 Tool PO Tracking 頁面查看`);
+      message.success({
+        duration: 6,
+        content: (
+          <span>
+            已從 SharePoint 載入 {result.count} 個站別資料。
+            <a
+              style={{ marginLeft: 10, fontWeight: 600 }}
+              onClick={navToToolTab}
+            >
+              前往 Tool PO Tracking →
+            </a>
+          </span>
+        ),
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       message.error(`同步失敗：${msg}`);
