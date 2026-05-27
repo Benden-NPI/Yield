@@ -317,17 +317,23 @@ export function useToolGanttSync(
       }
 
       if (rows.length > 0) {
-        console.info('[ToolGanttSync] first row keys:', Object.keys(rows[0] as object));
-        console.info('[ToolGanttSync] first row sample:', JSON.stringify(rows[0]).slice(0, 300));
-        // Debug: show all unique station values so we can see the actual naming pattern
-        const stationKey = Object.keys(rows[0] as object).find(k =>
-          normKey(k).includes('stationfor') || normKey(k) === 'station' || normKey(k) === 'stationname'
-        );
-        if (stationKey) {
-          const uniq = [...new Set(rows.map(r => String((r as Record<string,unknown>)[stationKey] ?? '')).filter(Boolean))];
-          console.info('[ToolGanttSync] unique station values:', uniq);
-        } else {
-          console.warn('[ToolGanttSync] could not find station column — keys:', Object.keys(rows[0] as object));
+        const allKeys = Object.keys(rows[0] as object);
+        console.info('[ToolGanttSync] first row keys:', allKeys);
+        console.info('[ToolGanttSync] first row sample:', JSON.stringify(rows[0]).slice(0, 500));
+
+        // Debug owner columns: show which keys matched and what values were found
+        const ownerCandidates = {
+          'Owner-SurveyTool': ['Owner - Survey Tool','Owner-Survey Tool','Survey Tool Owner','OwnerSurveyTool','Survey Tool','SurveyTool'],
+          'Owner-EE':         ['Owner - EE','Owner-EE','EE Owner','OwnerEE','EE'],
+          'Owner-NPI':        ['Owner - NPI','Owner-NPI','NPI Owner','OwnerNPI','NPI'],
+        };
+        for (const [label, cands] of Object.entries(ownerCandidates)) {
+          const wanted = cands.map(normKey);
+          const matched = allKeys.filter(k => wanted.includes(normKey(k)));
+          const sampleVal = matched.length > 0
+            ? String((rows[0] as Record<string,unknown>)[matched[0]] ?? '(empty)')
+            : '(no match)';
+          console.info(`[ToolGanttSync] ${label}: matched key=${matched[0] ?? 'none'}, sample="${sampleVal}"`);
         }
       } else {
         console.warn('[ToolGanttSync] Power Automate returned 0 rows');
