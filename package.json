@@ -1,6 +1,6 @@
 {
   "name": "yield",
-  "version": "1.10.9",
+  "version": "1.11.0",
   "description": "良率管理系統 (React + TypeScript + Vite, 資料儲存於 localStorage)。",
   "private": true,
   "scripts": {

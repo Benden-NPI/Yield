@@ -9,6 +9,9 @@ export interface StationRecord {
   qualifyDone: string | null;
   tuningCriteria: string;
   qualifyCriteria: string;
+  ownerSurveyTool: string;
+  ownerEE: string;
+  ownerNPI: string;
 }
 
 export type MilestoneKey = 'moveIn' | 'setupDone' | 'tuningDone' | 'qualifyDone';

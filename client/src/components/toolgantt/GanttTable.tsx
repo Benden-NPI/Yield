@@ -5,6 +5,7 @@ import { MILESTONE_PHASES, MILESTONE_PERIODS } from './constants';
 /* ── Constants ── */
 const DAY = 86_400_000;
 const STATION_COL_W = 240;
+const OWNER_COL_W = 76;
 const WEEK_W = 28;
 const MAX_WEEKS = 130; // ~2.5 years; prevents runaway ranges from bad date data
 
@@ -166,6 +167,9 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
               <th style={thStationStyle} rowSpan={2}>
                 Station / Process
               </th>
+              <th style={thOwnerStyle} rowSpan={2}>Survey<br />Tool</th>
+              <th style={thOwnerStyle} rowSpan={2}>EE</th>
+              <th style={thOwnerStyle} rowSpan={2}>NPI</th>
               {months.map((m, i) => (
                 <th key={i} colSpan={m.span} style={thMonthStyle}>
                   {m.label}
@@ -214,6 +218,9 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                 return (
                   <tr key={`sep-${ri}`}>
                     <td style={tdSepLabelStyle}>{row.label}</td>
+                    <td style={tdSepCellStyle} />
+                    <td style={tdSepCellStyle} />
+                    <td style={tdSepCellStyle} />
                     {weeks.map((_, wi) => (
                       <td key={wi} style={tdSepCellStyle} />
                     ))}
@@ -233,6 +240,11 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                       <div style={processStepStyle}>{s.processStep}</div>
                     )}
                   </td>
+
+                  {/* Owner cells */}
+                  <td style={tdOwnerStyle}>{s.ownerSurveyTool}</td>
+                  <td style={tdOwnerStyle}>{s.ownerEE}</td>
+                  <td style={tdOwnerStyle}>{s.ownerNPI}</td>
 
                   {/* Gantt cells */}
                   {weeks.map((wStart, wi) => {
@@ -430,6 +442,35 @@ const thStationStyle: React.CSSProperties = {
   textTransform: 'uppercase',
   letterSpacing: '.6px',
   borderRight: '2px solid #CBD5E1',
+};
+
+const thOwnerStyle: React.CSSProperties = {
+  width: OWNER_COL_W,
+  minWidth: OWNER_COL_W,
+  padding: '4px 6px',
+  background: '#F8FAFC',
+  border: '1px solid #E5E7EB',
+  textAlign: 'center',
+  fontWeight: 700,
+  fontSize: '.6rem',
+  color: '#6B7280',
+  textTransform: 'uppercase',
+  letterSpacing: '.4px',
+  lineHeight: 1.3,
+};
+
+const tdOwnerStyle: React.CSSProperties = {
+  width: OWNER_COL_W,
+  minWidth: OWNER_COL_W,
+  maxWidth: OWNER_COL_W,
+  padding: '4px 6px',
+  fontSize: '.68rem',
+  color: '#374151',
+  borderBottom: '1px solid #F0F0F0',
+  borderRight: '1px solid #E5E7EB',
+  verticalAlign: 'middle',
+  textAlign: 'center',
+  wordBreak: 'break-word',
 };
 
 const thMonthStyle: React.CSSProperties = {

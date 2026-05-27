@@ -230,19 +230,32 @@ export function mapStationRows(rows: SPRow[]): StationRecord[] {
         'Qualify Completed Qual lot', 'QualifyCompletedQuallot',
         'Qualify Completed', 'Qualify', 'QualifyDone',
       ]);
-      const qCritVal   = pickKey(row, ['Qualify Criteria', 'QualifyCriteria']);
+      const qCritVal         = pickKey(row, ['Qualify Criteria', 'QualifyCriteria']);
+      const surveyToolVal    = pickKey(row, [
+        'Owner - Survey Tool', 'Owner-Survey Tool', 'Survey Tool Owner',
+        'OwnerSurveyTool', 'Survey Tool', 'SurveyTool',
+      ]);
+      const eeVal            = pickKey(row, [
+        'Owner - EE', 'Owner-EE', 'EE Owner', 'OwnerEE', 'EE',
+      ]);
+      const npiVal           = pickKey(row, [
+        'Owner - NPI', 'Owner-NPI', 'NPI Owner', 'OwnerNPI', 'NPI',
+      ]);
 
       return {
         station,
         stationType,
         stationNo,
-        processStep: stepVal != null ? String(stepVal).trim().replace(/\n/g, ' ') : '',
-        moveIn:      parseDate(moveInVal),
-        setupDone:   parseDate(setupVal),
-        tuningDone:  parseDate(tuningVal),
-        qualifyDone: parseDate(qualifyVal),
-        tuningCriteria:  tCritVal  != null ? String(tCritVal).trim()  : '',
-        qualifyCriteria: qCritVal  != null ? String(qCritVal).trim()  : '',
+        processStep:     stepVal        != null ? String(stepVal).trim().replace(/\n/g, ' ') : '',
+        moveIn:          parseDate(moveInVal),
+        setupDone:       parseDate(setupVal),
+        tuningDone:      parseDate(tuningVal),
+        qualifyDone:     parseDate(qualifyVal),
+        tuningCriteria:  tCritVal       != null ? String(tCritVal).trim()       : '',
+        qualifyCriteria: qCritVal       != null ? String(qCritVal).trim()       : '',
+        ownerSurveyTool: surveyToolVal  != null ? String(surveyToolVal).trim()  : '',
+        ownerEE:         eeVal          != null ? String(eeVal).trim()          : '',
+        ownerNPI:        npiVal         != null ? String(npiVal).trim()         : '',
       };
     })
     .filter((r): r is StationRecord => r !== null);
