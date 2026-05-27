@@ -306,6 +306,16 @@ export function useToolGanttSync(
       if (rows.length > 0) {
         console.info('[ToolGanttSync] first row keys:', Object.keys(rows[0] as object));
         console.info('[ToolGanttSync] first row sample:', JSON.stringify(rows[0]).slice(0, 300));
+        // Debug: show all unique station values so we can see the actual naming pattern
+        const stationKey = Object.keys(rows[0] as object).find(k =>
+          normKey(k).includes('stationfor') || normKey(k) === 'station' || normKey(k) === 'stationname'
+        );
+        if (stationKey) {
+          const uniq = [...new Set(rows.map(r => String((r as Record<string,unknown>)[stationKey] ?? '')).filter(Boolean))];
+          console.info('[ToolGanttSync] unique station values:', uniq);
+        } else {
+          console.warn('[ToolGanttSync] could not find station column — keys:', Object.keys(rows[0] as object));
+        }
       } else {
         console.warn('[ToolGanttSync] Power Automate returned 0 rows');
       }
