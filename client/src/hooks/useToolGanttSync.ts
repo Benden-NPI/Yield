@@ -5,7 +5,7 @@ import type { ToolRecord } from '../components/toolgantt/types';
  * Tool PO Tracking – SharePoint sync via a Power Automate HTTP-trigger Flow.
  *
  * The Flow is expected to:
- *   1. Be triggered via HTTP POST.
+ *   1. Be triggered via HTTP GET.
  *   2. Read the SharePoint Excel / List and return a JSON array in the Response.
  *
  * Expected row shape (column display names, tolerant matching):
@@ -167,11 +167,7 @@ export function useToolGanttSync(
     setSyncing(true);
     setLastError(null);
     try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-      });
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
 
       const raw: unknown = await res.json();
