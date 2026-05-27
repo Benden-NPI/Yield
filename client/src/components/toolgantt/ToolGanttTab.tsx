@@ -11,6 +11,26 @@ import type { StationRecord } from './types';
 import { useToolGanttSync, getToolGanttWebhookUrl } from '../../hooks/useToolGanttSync';
 import { useToolGanttStore } from '../../hooks/useToolGanttStore';
 
+/* ── Helper: show multi-line error message ── */
+type MsgApi = ReturnType<typeof message.useMessage>[0];
+
+function showSyncError(msgApi: MsgApi, rawMsg: string) {
+  const lines = rawMsg.split('\n').filter(Boolean);
+  msgApi.open({
+    type: 'error',
+    duration: 10,
+    content: (
+      <div style={{ maxWidth: 400 }}>
+        {lines.map((line, i) => (
+          <div key={i} style={{ lineHeight: 1.6, fontSize: i === 0 ? 13 : 12, color: i === 0 ? undefined : '#595959' }}>
+            {line}
+          </div>
+        ))}
+      </div>
+    ),
+  });
+}
+
 /* ── Component ── */
 const ToolGanttTab: React.FC = () => {
   const { stations, source, setStations } = useToolGanttStore();
@@ -125,7 +145,7 @@ const ToolGanttTab: React.FC = () => {
                     msgApi.success(`已載入 ${res.count} 個站別資料`);
                   } catch (e: unknown) {
                     const msg = e instanceof Error ? e.message : String(e);
-                    msgApi.error('同步失敗：' + msg);
+                    showSyncError(msgApi, msg);
                   }
                 }}
                 okText="同步"
@@ -235,7 +255,17 @@ const ToolGanttTab: React.FC = () => {
                     msgApi.success({ content: `已載入 ${res.count} 個站別資料`, key, duration: 3 });
                   } catch (e: unknown) {
                     const msg = e instanceof Error ? e.message : String(e);
-                    msgApi.error({ content: '同步失敗：' + msg, key, duration: 6 });
+                    msgApi.open({ type: 'error', key, duration: 10,
+                      content: (
+                        <div style={{ maxWidth: 400 }}>
+                          {msg.split('\n').filter(Boolean).map((line, i) => (
+                            <div key={i} style={{ lineHeight: 1.6, fontSize: i === 0 ? 13 : 12, color: i === 0 ? undefined : '#595959' }}>
+                              {line}
+                            </div>
+                          ))}
+                        </div>
+                      ),
+                    });
                   }
                 }}
                 okText="同步"

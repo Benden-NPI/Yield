@@ -37,6 +37,60 @@ export function setToolGanttWebhookUrl(url: string): void {
 
 type SPRow = Record<string, unknown>;
 
+/**
+ * Parse a Power Automate error body and return a human-readable message.
+ * Detects Excel file-lock errors specifically so the user knows to close the file.
+ */
+function parsePowerAutomateError(body: string, status: number): string {
+  const lower = body.toLowerCase();
+
+  // Excel file locked / checked out / being edited
+  if (
+    lower.includes('resourcelocked') ||
+    lower.includes('locked for editing') ||
+    lower.includes('checked out') ||
+    lower.includes('lockedbyuser') ||
+    lower.includes('file is locked') ||
+    lower.includes('editmode') ||
+    (lower.includes('lock') && lower.includes('excel'))
+  ) {
+    return (
+      'Excel 檔案目前被占用（OneDrive 同步中或有人正在開啟編輯）。\n' +
+      '請確認 Control_Plan.xlsx 已關閉，或等 OneDrive 同步完成後再試。'
+    );
+  }
+
+  // Power Automate / SharePoint throttling
+  if (
+    lower.includes('throttl') ||
+    lower.includes('too many requests') ||
+    status === 429
+  ) {
+    return 'SharePoint / Power Automate 請求頻率過高（Throttling），請稍候幾分鐘後再同步。';
+  }
+
+  // Flow not enabled / trigger disabled
+  if (
+    lower.includes('workflowtriggerisnotenabled') ||
+    lower.includes('trigger is not enabled') ||
+    lower.includes('flow is disabled')
+  ) {
+    return 'Power Automate Flow 未啟用，請到 Power Automate 網頁確認 Flow 狀態為「開啟」。';
+  }
+
+  // Try to extract the inner "message" field from PA error JSON
+  try {
+    const obj = JSON.parse(body) as Record<string, unknown>;
+    const inner =
+      (obj.error as { message?: string } | undefined)?.message ||
+      (obj.message as string | undefined) ||
+      '';
+    if (inner) return `HTTP ${status}：${inner}`;
+  } catch { /* not JSON */ }
+
+  return `HTTP ${status} | ${body.slice(0, 250)}`;
+}
+
 /** Lower-case + strip non-alphanumeric for tolerant column name matching. */
 function normKey(k: string): string {
   return k.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -214,7 +268,7 @@ export function useToolGanttSync(
       const text = await res.text();
       console.info('[ToolGanttSync] HTTP', res.status, '| body preview:', text.slice(0, 300));
 
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} | body: ${text.slice(0, 200)}`);
+      if (!res.ok) throw new Error(parsePowerAutomateError(text, res.status));
 
       let raw: unknown;
       try { raw = JSON.parse(text); }
@@ -243,7 +297,10 @@ export function useToolGanttSync(
     } catch (err) {
       const isAbort = err instanceof DOMException && err.name === 'AbortError';
       const msg = isAbort
-        ? '同步逾時（超過 90 秒），請確認 Power Automate Flow 是否正常運作'
+        ? '同步逾時（超過 90 秒）。常見原因：\n' +
+          '① Control_Plan.xlsx 被 OneDrive 同步或有人開啟編輯中\n' +
+          '② Power Automate Flow 長時間未使用需冷啟動（再試一次通常會成功）\n' +
+          '③ Flow 未啟用，請至 Power Automate 確認'
         : err instanceof Error ? err.message : String(err);
       setLastError(msg);
       throw new Error(msg);
