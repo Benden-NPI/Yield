@@ -7,7 +7,7 @@ import { useYieldStore } from './useYieldData';
  * SharePoint read-only sync via a Power Automate HTTP-trigger Flow.
  *
  * The Flow is expected to:
- *   1. Be triggered via HTTP GET.
+ *   1. Be triggered via HTTP POST.
  *   2. Read the SharePoint list and produce a JSON array body in the Response action.
  *
  * Expected SharePoint row shape (column display names in the Response JSON):
@@ -196,7 +196,11 @@ export function useSharePointSync(): UseSharePointSync {
     setSyncing(true);
     setLastError(null);
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status} ${res.statusText}`);
       }
