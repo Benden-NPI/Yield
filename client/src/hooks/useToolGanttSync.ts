@@ -167,7 +167,7 @@ export function useToolGanttSync(
     setSyncing(true);
     setLastError(null);
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { method: 'GET' });
 
       // Read as text first so we can show the raw response if JSON parsing fails.
       const text = await res.text();
