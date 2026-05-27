@@ -168,21 +168,35 @@ export function useToolGanttSync(
     setLastError(null);
     try {
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
 
-      const raw: unknown = await res.json();
+      // Read as text first so we can show the raw response if JSON parsing fails.
+      const text = await res.text();
+      console.info('[ToolGanttSync] HTTP', res.status, '| body preview:', text.slice(0, 300));
+
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} | body: ${text.slice(0, 200)}`);
+
+      let raw: unknown;
+      try {
+        raw = JSON.parse(text);
+      } catch {
+        throw new Error(`Response is not valid JSON. Raw response: ${text.slice(0, 300)}`);
+      }
+
       let rows: SPRow[];
       if (Array.isArray(raw)) {
         rows = raw as SPRow[];
       } else if (raw && typeof raw === 'object' && Array.isArray((raw as { value?: unknown }).value)) {
         rows = (raw as { value: SPRow[] }).value;
       } else {
-        throw new Error('Response is not a JSON array');
+        throw new Error(`Response is not a JSON array. Got: ${text.slice(0, 300)}`);
       }
 
-      // Debug aid
+      // Debug aid: log first row column names so you can verify the field mapping.
       if (rows.length > 0) {
         console.info('[ToolGanttSync] first row keys:', Object.keys(rows[0] as object));
+        console.info('[ToolGanttSync] first row sample:', JSON.stringify(rows[0]).slice(0, 300));
+      } else {
+        console.warn('[ToolGanttSync] Power Automate returned 0 rows');
       }
 
       const records = mapToolGanttRows(rows);
