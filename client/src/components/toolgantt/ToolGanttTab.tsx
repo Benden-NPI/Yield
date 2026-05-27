@@ -154,7 +154,7 @@ const ToolGanttTab: React.FC = () => {
         >
           <CloudDownloadOutlined style={{ fontSize: 48, color: '#D1D5DB' }} />
           <Typography.Title level={4} style={{ color: '#6B7280', margin: 0 }}>
-            尚未載入 Tool PO Tracking 資料
+            尚未載入 Process Readiness 資料
           </Typography.Title>
           <Typography.Text
             type="secondary"

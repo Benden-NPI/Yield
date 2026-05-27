@@ -82,7 +82,7 @@ export const SettingsTab: React.FC = () => {
               style={{ marginLeft: 10, fontWeight: 600 }}
               onClick={navToToolTab}
             >
-              前往 Tool PO Tracking →
+              前往 Process Readiness →
             </a>
           </span>
         ),
@@ -145,19 +145,19 @@ export const SettingsTab: React.FC = () => {
       </Card>
 
       <Card
-        title={<><CloudDownloadOutlined style={{ color: '#52c41a' }} /> Tool PO Tracking — SharePoint 同步</>}
+        title={<><CloudDownloadOutlined style={{ color: '#52c41a' }} /> Process Readiness — SharePoint 同步</>}
         style={{ borderColor: '#e6ffed' }}
       >
         <Alert
           type="success"
           showIcon
-          message="從 Power Automate Webhook 載入 Tool PO Tracking Excel 資料"
+          message="從 Power Automate Webhook 載入 Process Readiness Excel 資料"
           description={
             <div style={{ fontSize: 12 }}>
               <div>• 按下「從 SharePoint 同步」會 <b>覆寫</b> Tool Gantt 的資料（本機 session）。</div>
               <div>• Webhook URL 只存在這台瀏覽器的 localStorage，<b>不會 commit 進 source code</b>。</div>
               <div>• Control Plan Excel 需要包含：<code>Station for 300x300</code>、<code>Process Step</code>、<code>Move-in day</code>、<code>Setup Completed (HW)</code>、<code>Tuning Completed (Short loop)</code>、<code>Tuning Criteria</code>、<code>Qualify Completed (Qual lot)</code>、<code>Qualify Criteria</code> 欄位。</div>
-              <div>• 同步後切換到 <b>Tool PO Tracking</b> 頁面即可看到更新的 Gantt 圖。</div>
+              <div>• 同步後切換到 <b>Process Readiness</b> 頁面即可看到更新的 Gantt 圖。</div>
             </div>
           }
           style={{ marginBottom: 12 }}

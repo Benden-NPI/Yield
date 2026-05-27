@@ -39,7 +39,7 @@ const App: React.FC = () => {
     { key: 'alerts',    label: <span><AlertOutlined /> Alerts &amp; CAPA</span>,        children: <AlertsAndCapaTab /> },
     { key: 'analytics', label: <span><ExperimentOutlined /> Process Analytics</span>,   children: <ProcessAnalyticsTab /> },
     { key: 'settings',  label: <span><SettingOutlined /> Settings</span>,               children: <SettingsTab /> },
-    { key: 'toolgantt', label: <span><ToolOutlined /> Tool PO Tracking</span>,          children: <ToolGanttTab /> },
+    { key: 'toolgantt', label: <span><ToolOutlined /> Process Readiness</span>,          children: <ToolGanttTab /> },
   ];
 
   return (
