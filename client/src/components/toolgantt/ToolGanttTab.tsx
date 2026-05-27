@@ -2,7 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   Button, Space, DatePicker, Tooltip, message, Divider, Popconfirm, Typography,
 } from 'antd';
-import { CameraOutlined, CloudDownloadOutlined, SettingOutlined } from '@ant-design/icons';
+import { CameraOutlined, CloudDownloadOutlined, LoadingOutlined, SettingOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas-pro';
 import GanttTable from './GanttTable';
@@ -64,6 +64,33 @@ const ToolGanttTab: React.FC = () => {
 
   /* ── Empty state ── */
   if (!stations) {
+    /* Syncing in progress → show prominent loading screen */
+    if (spSyncing) {
+      return (
+        <>
+          {msgCtx}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '80px 24px',
+              gap: 20,
+            }}
+          >
+            <LoadingOutlined style={{ fontSize: 52, color: '#3B82F6' }} spin />
+            <Typography.Title level={4} style={{ color: '#3B82F6', margin: 0 }}>
+              正在從 SharePoint 載入資料…
+            </Typography.Title>
+            <Typography.Text type="secondary" style={{ textAlign: 'center' }}>
+              Power Automate Flow 執行中，請稍候。若超過 90 秒未回應，系統將自動中斷並顯示錯誤。
+            </Typography.Text>
+          </div>
+        </>
+      );
+    }
+
     return (
       <>
         {msgCtx}
@@ -104,21 +131,13 @@ const ToolGanttTab: React.FC = () => {
                 okText="同步"
                 cancelText="取消"
               >
-                <Button
-                  type="primary"
-                  icon={<CloudDownloadOutlined />}
-                  loading={spSyncing}
-                >
+                <Button type="primary" icon={<CloudDownloadOutlined />}>
                   從 SharePoint 同步
                 </Button>
               </Popconfirm>
             ) : (
               <Tooltip title="請先在 Settings 頁面貼上 Webhook URL">
-                <Button
-                  type="primary"
-                  icon={<CloudDownloadOutlined />}
-                  disabled
-                >
+                <Button type="primary" icon={<CloudDownloadOutlined />} disabled>
                   從 SharePoint 同步
                 </Button>
               </Tooltip>
@@ -209,14 +228,14 @@ const ToolGanttTab: React.FC = () => {
               <Popconfirm
                 title="從 SharePoint 同步會覆寫目前資料，確定繼續？"
                 onConfirm={async () => {
+                  const key = 'tg-sync';
+                  msgApi.loading({ content: '正在從 SharePoint 載入資料…', key, duration: 0 });
                   try {
                     const res = await spSync();
-                    msgApi.success(
-                      `已從 SharePoint 載入 ${res.count} 個站別資料`,
-                    );
+                    msgApi.success({ content: `已載入 ${res.count} 個站別資料`, key, duration: 3 });
                   } catch (e: unknown) {
                     const msg = e instanceof Error ? e.message : String(e);
-                    msgApi.error('同步失敗：' + msg);
+                    msgApi.error({ content: '同步失敗：' + msg, key, duration: 6 });
                   }
                 }}
                 okText="同步"

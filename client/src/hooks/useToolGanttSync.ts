@@ -206,8 +206,10 @@ export function useToolGanttSync(
     }
     setSyncing(true);
     setLastError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90_000); // 90 s hard cap
     try {
-      const res = await fetch(url, { method: 'GET' });
+      const res = await fetch(url, { method: 'GET', signal: controller.signal });
 
       const text = await res.text();
       console.info('[ToolGanttSync] HTTP', res.status, '| body preview:', text.slice(0, 300));
@@ -239,10 +241,14 @@ export function useToolGanttSync(
       setLastSyncAt(Date.now());
       return { count: stations.length };
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const isAbort = err instanceof DOMException && err.name === 'AbortError';
+      const msg = isAbort
+        ? '同步逾時（超過 90 秒），請確認 Power Automate Flow 是否正常運作'
+        : err instanceof Error ? err.message : String(err);
       setLastError(msg);
-      throw err;
+      throw new Error(msg);
     } finally {
+      clearTimeout(timeoutId);
       setSyncing(false);
     }
   }, [onData]);
