@@ -2,16 +2,18 @@ import { create } from 'zustand';
 import type { StationRecord } from '../components/toolgantt/types';
 
 /**
- * Zustand store for Tool PO Tracking (station-by-station Gantt).
+ * Zustand store for Tool PO Tracking / Process Readiness Gantt.
  *
  * stations + source      → persisted to localStorage (survives page refresh).
- * completedElements      → per-element (diamond / bar) completed marks,
- *                          persisted to localStorage.
- *                          Key format: "<stationName>|ms|<phaseKey>"  (milestone diamond)
- *                                      "<stationName>|bar|<periodIdx>" (period bar)
+ * completedElements      → per-element (diamond / bar) gray marks, localStorage.
+ * notes                  → per-bar text notes, localStorage.
+ *
+ * Key format:
+ *   "<stationName>|ms|<phaseKey>"   — milestone diamond
+ *   "<stationName>|bar|<periodIdx>" — period bar
  */
 
-/* ── Station data persistence ── */
+/* ── Station data ── */
 const STATIONS_KEY = 'tool_gantt_stations';
 
 function loadStations(): { stations: StationRecord[] | null; source: string } {
@@ -31,7 +33,7 @@ function saveStations(stations: StationRecord[] | null, source: string): void {
   } catch {}
 }
 
-/* ── Per-element completed marks ── */
+/* ── Completed elements ── */
 const ELEMENTS_KEY = 'tool_gantt_completed_elements';
 
 function loadElements(): Set<string> {
@@ -45,15 +47,32 @@ function saveElements(s: Set<string>): void {
   try { localStorage.setItem(ELEMENTS_KEY, JSON.stringify([...s])); } catch {}
 }
 
+/* ── Per-bar notes ── */
+const NOTES_KEY = 'tool_gantt_notes';
+
+function loadNotes(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(NOTES_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+  } catch { return {}; }
+}
+
+function saveNotes(n: Record<string, string>): void {
+  try { localStorage.setItem(NOTES_KEY, JSON.stringify(n)); } catch {}
+}
+
 /* ── Store interface ── */
 interface ToolGanttStore {
   stations: StationRecord[] | null;
   source: string;
   completedElements: Set<string>;
+  notes: Record<string, string>;
   setStations: (stations: StationRecord[], source: string) => void;
   clearStations: () => void;
   toggleElement: (key: string) => void;
   clearElements: () => void;
+  setNote: (key: string, text: string) => void;
+  clearNotes: () => void;
 }
 
 const { stations: initStations, source: initSource } = loadStations();
@@ -62,6 +81,7 @@ export const useToolGanttStore = create<ToolGanttStore>((set) => ({
   stations: initStations,
   source: initSource,
   completedElements: loadElements(),
+  notes: loadNotes(),
 
   setStations: (stations, source) => {
     saveStations(stations, source);
@@ -85,5 +105,19 @@ export const useToolGanttStore = create<ToolGanttStore>((set) => ({
   clearElements: () => {
     saveElements(new Set());
     set({ completedElements: new Set() });
+  },
+
+  setNote: (key, text) =>
+    set((state) => {
+      const next = { ...state.notes };
+      if (text.trim()) next[key] = text.trim();
+      else delete next[key];
+      saveNotes(next);
+      return { notes: next };
+    }),
+
+  clearNotes: () => {
+    saveNotes({});
+    set({ notes: {} });
   },
 }));

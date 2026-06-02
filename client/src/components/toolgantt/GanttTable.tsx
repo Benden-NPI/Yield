@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StationRecord } from './types';
 import { MILESTONE_PHASES, MILESTONE_PERIODS } from './constants';
 
@@ -99,19 +99,52 @@ interface TipState {
   detail: string;
 }
 
+/* ── Bar edit popup state ── */
+interface EditBar {
+  key: string;
+  label: string;
+  criteria: string;
+  x: number;
+  y: number;
+  draft: string;
+}
+
 /* ── Props ── */
 interface Props {
   stations: StationRecord[];
   deadline: string;
   completedElements: Set<string>;
   onToggleElement: (key: string) => void;
+  notes: Record<string, string>;
+  onSetNote: (key: string, text: string) => void;
 }
 
 /* ── Component ── */
-const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, onToggleElement }) => {
+const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, onToggleElement, notes, onSetNote }) => {
   const headRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const [tip, setTip] = useState<TipState | null>(null);
+  const [editBar, setEditBar] = useState<EditBar | null>(null);
+
+  /* Close popup on click-outside or Escape */
+  useEffect(() => {
+    if (!editBar) return;
+    const onDown = (e: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node))
+        setEditBar(null);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setEditBar(null); };
+    const id = setTimeout(() => document.addEventListener('mousedown', onDown), 0);
+    document.addEventListener('keydown', onKey);
+    return () => { clearTimeout(id); document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [editBar]);
+
+  const saveNote = useCallback(() => {
+    if (!editBar) return;
+    onSetNote(editBar.key, editBar.draft);
+    setEditBar(null);
+  }, [editBar, onSetNote]);
 
   const { weeks, months } = useMemo(() => computeRange(stations), [stations]);
 
@@ -320,6 +353,8 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
 
                       const barElemKey = `${s.station}|bar|${pi}`;
                       const barDone = completedElements.has(barElemKey);
+                      const barNote = notes[barElemKey] ?? '';
+                      const tipDetail = barNote || criteria;
 
                       elems.push(
                         <div
@@ -331,11 +366,24 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                             background: barDone ? '#B0B7C3' : period.color,
                             opacity: barDone ? 0.35 : 0.65,
                             cursor: 'pointer',
+                            outline: barNote ? '1.5px solid rgba(255,255,255,0.75)' : 'none',
+                            outlineOffset: '-1px',
                           }}
-                          onClick={(e) => { e.stopPropagation(); onToggleElement(barElemKey); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTip(null);
+                            setEditBar({
+                              key: barElemKey,
+                              label: period.label,
+                              criteria,
+                              x: e.clientX,
+                              y: e.clientY + 10,
+                              draft: barNote,
+                            });
+                          }}
                           data-tip-type="period"
                           data-tip-title={period.label}
-                          data-tip-detail={criteria}
+                          data-tip-detail={tipDetail}
                         />,
                       );
                     });
@@ -391,6 +439,94 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
           </tbody>
         </table>
       </div>
+
+      {/* ── Bar note / done popup ── */}
+      {editBar && (
+        <div
+          ref={popupRef}
+          style={{
+            position: 'fixed',
+            left: Math.min(editBar.x, window.innerWidth - 288),
+            top: Math.min(editBar.y, window.innerHeight - 220),
+            zIndex: 1001,
+            background: '#fff',
+            border: '1px solid #D1D5DB',
+            borderRadius: 8,
+            boxShadow: '0 8px 24px rgba(0,0,0,.14)',
+            padding: '12px 14px',
+            width: 272,
+          }}
+          onMouseMove={(e) => e.stopPropagation()} /* prevent table tooltip while popup open */
+        >
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, fontSize: '.74rem', color: '#374151' }}>{editBar.label}</span>
+            <button
+              onClick={() => setEditBar(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: '.85rem', lineHeight: 1, padding: 2 }}
+            >✕</button>
+          </div>
+
+          {/* Done toggle */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: '.7rem', color: '#374151', cursor: 'pointer', userSelect: 'none' }}>
+            <input
+              type="checkbox"
+              checked={completedElements.has(editBar.key)}
+              onChange={() => onToggleElement(editBar.key)}
+              style={{ accentColor: '#10B981', width: 14, height: 14 }}
+            />
+            標記為完成
+          </label>
+
+          {/* Note textarea */}
+          <div style={{ fontSize: '.65rem', color: '#6B7280', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px' }}>備註</div>
+          <textarea
+            autoFocus
+            rows={3}
+            placeholder="新增備註..."
+            value={editBar.draft}
+            onChange={(e) => setEditBar(prev => prev ? { ...prev, draft: e.target.value } : null)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveNote(); }}
+            style={{
+              width: '100%',
+              resize: 'vertical',
+              fontSize: '.72rem',
+              padding: '6px 8px',
+              borderRadius: 5,
+              border: '1px solid #E5E7EB',
+              outline: 'none',
+              fontFamily: 'inherit',
+              lineHeight: 1.5,
+              minHeight: 56,
+              boxSizing: 'border-box',
+              color: '#1F2937',
+            }}
+          />
+
+          {/* Excel criteria (read-only hint) */}
+          {editBar.criteria && (
+            <div style={{ fontSize: '.62rem', color: '#9CA3AF', marginTop: 4, lineHeight: 1.4 }}>
+              Criteria: {editBar.criteria}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 10 }}>
+            <button
+              onClick={() => setEditBar(null)}
+              style={{ padding: '4px 12px', fontSize: '.68rem', border: '1px solid #E5E7EB', borderRadius: 5, cursor: 'pointer', background: '#fff', color: '#374151' }}
+            >
+              取消
+            </button>
+            <button
+              onClick={saveNote}
+              style={{ padding: '4px 12px', fontSize: '.68rem', border: 'none', borderRadius: 5, cursor: 'pointer', background: '#3B82F6', color: '#fff', fontWeight: 600 }}
+            >
+              儲存
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Tooltip ── */}
       {tip && (
