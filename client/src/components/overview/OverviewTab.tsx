@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Row, Col, Card, Typography, Tag, List, Empty, Space } from 'antd';
+import { Row, Col, Card, Typography, Tag, List, Empty, Space, Button, Tooltip, Popconfirm, message } from 'antd';
+import { SyncOutlined } from '@ant-design/icons';
 import { PdfExportButton } from '../PdfExportButton';
+import { useSharePointSync, getStoredWebhookUrl } from '../../hooks/useSharePointSync';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
@@ -21,6 +23,22 @@ const { Text, Title } = Typography;
 export const OverviewTab: React.FC = () => {
   const records = useFilteredRecords();
   const lastUpdatedAt = useYieldStore((s) => s.lastUpdatedAt);
+  const [msgApi, msgCtx] = message.useMessage();
+  const { sync, syncing } = useSharePointSync();
+  const hasUrl = !!getStoredWebhookUrl();
+
+  const handleSync = async () => {
+    try {
+      const result = await sync();
+      if (result.missingMonth > 0) {
+        msgApi.warning(`已載入 ${result.count} 筆；其中 ${result.missingMonth} 筆缺少 Date 欄位`);
+      } else {
+        msgApi.success(`已從 SharePoint 載入 ${result.count} 筆資料`);
+      }
+    } catch (err) {
+      msgApi.error(`同步失敗：${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
   const { throughYield, unitCost } = useSettingsStore();
   const alerts = useAlerts();
   const openCapaCount = useCapaStore((s) => s.items.filter((i) => i.status !== 'closed').length);
@@ -87,7 +105,26 @@ export const OverviewTab: React.FC = () => {
 
   return (
     <div>
+      {msgCtx}
       <Space style={{ width: '100%', justifyContent: 'flex-end', marginBottom: 12 }}>
+        {hasUrl ? (
+          <Popconfirm
+            title="從 SharePoint 同步會覆寫本機 Yield 資料，確定繼續？"
+            onConfirm={handleSync}
+            okText="同步"
+            cancelText="取消"
+          >
+            <Button icon={<SyncOutlined spin={syncing} />} loading={syncing}>
+              Sync Yield Data
+            </Button>
+          </Popconfirm>
+        ) : (
+          <Tooltip title="請先在 Settings 頁面設定 Yield Webhook URL">
+            <Button icon={<SyncOutlined />} disabled>
+              Sync Yield Data
+            </Button>
+          </Tooltip>
+        )}
         <PdfExportButton
           targetRef={[reportRef, yieldReportsExportRef]}
           fileName="overview-report"
