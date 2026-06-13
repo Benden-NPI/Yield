@@ -1,12 +1,14 @@
 import React from 'react';
 import { Card, Form, InputNumber, Switch, Button, Row, Col, Divider, Typography, Space, Popconfirm, Input, message, Alert } from 'antd';
-import { SettingOutlined, ReloadOutlined, CloudDownloadOutlined } from '@ant-design/icons';
+import { SettingOutlined, ReloadOutlined, CloudDownloadOutlined, DatabaseOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useSettingsStore, DEFAULT_SETTINGS } from '../../hooks/useSettings';
 import type { SettingsState } from '../../hooks/useSettings';
 import { METRIC_LABELS, METRIC_UNITS, YIELD_METRICS } from '../../types/yield';
 import { useSharePointSync, getStoredWebhookUrl, setStoredWebhookUrl } from '../../hooks/useSharePointSync';
 import { useToolGanttSync, getToolGanttWebhookUrl, setToolGanttWebhookUrl } from '../../hooks/useToolGanttSync';
 import { useToolGanttStore } from '../../hooks/useToolGanttStore';
+import { getWritebackUrl, setWritebackUrl, getUserName, setUserName } from '../../hooks/useReadinessRemote';
+import { exportBackup, importBackup } from '../../utils/backup';
 import type { StationRecord } from '../toolgantt/types';
 
 const { Title, Text } = Typography;
@@ -16,6 +18,31 @@ export const SettingsTab: React.FC = () => {
   const [form] = Form.useForm<SettingsState>();
   const { sync, syncing, lastSyncAt, lastError } = useSharePointSync();
   const [webhookUrl, setWebhookUrl] = React.useState<string>(() => getStoredWebhookUrl());
+
+  /* Backup / restore */
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const handleExport = () => exportBackup();
+  const handleImportClick = () => fileInputRef.current?.click();
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await importBackup(file);
+      message.success('備份已還原，請重新整理頁面（Ctrl+Shift+R）使資料生效');
+    } catch (err) {
+      message.error(`還原失敗：${err instanceof Error ? err.message : String(err)}`);
+    }
+    e.target.value = '';
+  };
+
+  /* Process Readiness write-back */
+  const [writebackUrl, setWritebackUrlState] = React.useState<string>(() => getWritebackUrl());
+  const [userName, setUserNameState] = React.useState<string>(() => getUserName());
+  const handleSaveWriteback = () => {
+    setWritebackUrl(writebackUrl.trim());
+    setUserName(userName);
+    message.success('寫回設定已儲存');
+  };
 
   /* Tool Gantt SharePoint */
   const [tgWebhookUrl, setTgWebhookUrl] = React.useState<string>(() => getToolGanttWebhookUrl());
@@ -95,6 +122,79 @@ export const SettingsTab: React.FC = () => {
 
   return (
     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      {/* ── Backup / Restore ── */}
+      <Card
+        title={<><DatabaseOutlined style={{ color: '#1677ff' }} /> Backup / Restore</>}
+        style={{ borderColor: '#e6efff' }}
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="匯出 / 匯入所有本機資料（Yield records、設定、CAPA、量測、Gantt 狀態）"
+          description={
+            <div style={{ fontSize: 12 }}>
+              <div>• 匯出的 JSON 不包含 Webhook URL（URL 含敏感 sig token，請妥善保管）。</div>
+              <div>• 還原後請按 <strong>Ctrl+Shift+R</strong> 重新整理頁面使資料生效。</div>
+            </div>
+          }
+          style={{ marginBottom: 12 }}
+        />
+        <Space>
+          <Button icon={<DownloadOutlined />} onClick={handleExport}>匯出備份 (.json)</Button>
+          <Button icon={<UploadOutlined />} onClick={handleImportClick}>從備份還原</Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            style={{ display: 'none' }}
+            onChange={handleImportFile}
+          />
+        </Space>
+      </Card>
+
+      {/* ── Process Readiness write-back ── */}
+      <Card
+        title={<><CloudDownloadOutlined style={{ color: '#7c3aed' }} /> Process Readiness — 完成狀態寫回 SharePoint</>}
+        style={{ borderColor: '#ede9fe' }}
+      >
+        <Alert
+          type="warning"
+          showIcon
+          message="設定後，點菱形 / bar 的完成標記將自動同步回 SharePoint List"
+          description={
+            <div style={{ fontSize: 12 }}>
+              <div>• 請先在 SharePoint 建立 List <strong>ProcessReadinessStatus</strong>，欄位：<code>ElementKey</code>（文字）、<code>Completed</code>（是/否）、<code>Note</code>（多行文字）、<code>UpdatedBy</code>（文字）、<code>UpdatedAt</code>（日期時間）。</div>
+              <div>• 再建立一條 Power Automate Flow：HTTP POST 觸發 → Get items（filter: ElementKey eq body.key）→ 有則 Update、無則 Create → Respond 200。</div>
+              <div>• Webhook URL 只存在瀏覽器 localStorage，<strong>不會 commit 進 source code</strong>。</div>
+              <div>• 網路失敗時自動進入重試佇列，下次進入 Process Readiness 頁面時補傳。</div>
+            </div>
+          }
+          style={{ marginBottom: 12 }}
+        />
+        <Row gutter={[8, 8]}>
+          <Col xs={24} md={8}>
+            <Input
+              placeholder="Your Name（寫回時作為 UpdatedBy）"
+              value={userName}
+              onChange={(e) => setUserNameState(e.target.value)}
+              autoComplete="off"
+            />
+          </Col>
+          <Col xs={24} md={16}>
+            <Input.Password
+              placeholder="貼上 Power Automate HTTP POST 寫回 Webhook URL"
+              value={writebackUrl}
+              onChange={(e) => setWritebackUrlState(e.target.value)}
+              autoComplete="off"
+              visibilityToggle
+            />
+          </Col>
+          <Col xs={24}>
+            <Button onClick={handleSaveWriteback}>儲存寫回設定</Button>
+          </Col>
+        </Row>
+      </Card>
+
       <Card
         title={<><CloudDownloadOutlined style={{ color: '#1677ff' }} /> SharePoint 同步（只讀）</>}
         style={{ borderColor: '#e6efff' }}

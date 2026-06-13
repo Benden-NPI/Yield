@@ -4,7 +4,7 @@ import { SyncOutlined } from '@ant-design/icons';
 import { PdfExportButton } from '../PdfExportButton';
 import { useSharePointSync, getStoredWebhookUrl } from '../../hooks/useSharePointSync';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip,
   ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { useYieldStore, aggregateByMonth, paretoByDefect, useFilteredRecords } from '../../hooks/useYieldData';
@@ -228,7 +228,7 @@ export const OverviewTab: React.FC = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                   <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 12 }} width={48} />
-                  <Tooltip formatter={(v) => [`${v}%`, 'Through Yield']} />
+                  <ChartTooltip formatter={(v: unknown) => [`${v}%`, 'Through Yield']} />
                   <ReferenceLine y={throughYield.target} stroke="#52c41a" strokeDasharray="4 4" />
                   <ReferenceLine y={throughYield.warning} stroke="#faad14" strokeDasharray="4 4" />
                   <ReferenceLine y={throughYield.critical} stroke="#ff4d4f" strokeDasharray="4 4" />

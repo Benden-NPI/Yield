@@ -1,17 +1,24 @@
 import { create } from 'zustand';
 import type { StationRecord } from '../components/toolgantt/types';
+import { enqueuePush, getUserName } from './useReadinessRemote';
 
 /**
- * Zustand store for Tool PO Tracking / Process Readiness Gantt.
+ * Zustand store for Process Readiness Gantt.
  *
- * stations + source      → persisted to localStorage (survives page refresh).
- * completedElements      → per-element (diamond / bar) gray marks, localStorage.
- * notes                  → per-bar text notes, localStorage.
+ * completedElements: Record<string, { completedAt: string; by?: string }>
+ *   — upgraded from Set<string> in v1.12.0 to carry audit-trail metadata.
+ *   — loadElements() migrates old string-array format transparently.
+ *   — write-back: each toggle/note fires enqueuePush() (fire-and-forget).
  *
  * Key format:
  *   "<stationName>|ms|<phaseKey>"   — milestone diamond
  *   "<stationName>|bar|<periodIdx>" — period bar
  */
+
+export interface ElementStatus {
+  completedAt: string;
+  by?: string;
+}
 
 /* ── Station data ── */
 const STATIONS_KEY = 'tool_gantt_stations';
@@ -36,15 +43,29 @@ function saveStations(stations: StationRecord[] | null, source: string): void {
 /* ── Completed elements ── */
 const ELEMENTS_KEY = 'tool_gantt_completed_elements';
 
-function loadElements(): Set<string> {
+function loadElements(): Record<string, ElementStatus> {
   try {
     const raw = localStorage.getItem(ELEMENTS_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch { return new Set(); }
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    // Migration: v1.11 stored string[] — upgrade to Record<string, ElementStatus>
+    if (Array.isArray(parsed)) {
+      const now = new Date().toISOString();
+      const migrated: Record<string, ElementStatus> = {};
+      for (const key of parsed as string[]) {
+        migrated[key] = { completedAt: now };
+      }
+      return migrated;
+    }
+    if (typeof parsed === 'object' && parsed !== null) {
+      return parsed as Record<string, ElementStatus>;
+    }
+    return {};
+  } catch { return {}; }
 }
 
-function saveElements(s: Set<string>): void {
-  try { localStorage.setItem(ELEMENTS_KEY, JSON.stringify([...s])); } catch {}
+function saveElements(m: Record<string, ElementStatus>): void {
+  try { localStorage.setItem(ELEMENTS_KEY, JSON.stringify(m)); } catch {}
 }
 
 /* ── Per-bar notes ── */
@@ -65,7 +86,7 @@ function saveNotes(n: Record<string, string>): void {
 interface ToolGanttStore {
   stations: StationRecord[] | null;
   source: string;
-  completedElements: Set<string>;
+  completedElements: Record<string, ElementStatus>;
   notes: Record<string, string>;
   setStations: (stations: StationRecord[], source: string) => void;
   clearStations: () => void;
@@ -95,16 +116,27 @@ export const useToolGanttStore = create<ToolGanttStore>((set) => ({
 
   toggleElement: (key) =>
     set((state) => {
-      const next = new Set(state.completedElements);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      const next = { ...state.completedElements };
+      const nowCompleted = !(key in next);
+      if (nowCompleted) {
+        next[key] = { completedAt: new Date().toISOString(), by: getUserName() || undefined };
+      } else {
+        delete next[key];
+      }
       saveElements(next);
+      enqueuePush({
+        key,
+        completed: nowCompleted,
+        note: state.notes[key] ?? '',
+        by: getUserName(),
+        updatedAt: new Date().toISOString(),
+      });
       return { completedElements: next };
     }),
 
   clearElements: () => {
-    saveElements(new Set());
-    set({ completedElements: new Set() });
+    saveElements({});
+    set({ completedElements: {} });
   },
 
   setNote: (key, text) =>
@@ -113,6 +145,13 @@ export const useToolGanttStore = create<ToolGanttStore>((set) => ({
       if (text.trim()) next[key] = text.trim();
       else delete next[key];
       saveNotes(next);
+      enqueuePush({
+        key,
+        completed: key in state.completedElements,
+        note: text.trim(),
+        by: getUserName(),
+        updatedAt: new Date().toISOString(),
+      });
       return { notes: next };
     }),
 

@@ -181,7 +181,7 @@ export interface UseSharePointSync {
 }
 
 export function useSharePointSync(): UseSharePointSync {
-  const replaceRecords = useYieldStore((s) => s.replaceRecords);
+  const replaceSharePointRecords = useYieldStore((s) => s.replaceSharePointRecords);
   const [syncing, setSyncing] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
@@ -235,7 +235,7 @@ export function useSharePointSync(): UseSharePointSync {
             `First raw row keys = [${keys.join(', ')}] first raw row = ${sample}`,
         );
       }
-      replaceRecords(mapped);
+      replaceSharePointRecords(mapped);
       const now = Date.now();
       setLastSyncAt(now);
       return { count: mapped.length, missingMonth };
@@ -246,7 +246,7 @@ export function useSharePointSync(): UseSharePointSync {
     } finally {
       setSyncing(false);
     }
-  }, [replaceRecords]);
+  }, [replaceSharePointRecords]);
 
   return { syncing, lastSyncAt, lastError, sync };
 }

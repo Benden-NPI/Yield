@@ -10,6 +10,7 @@ import { DEFAULT_DEADLINE, MILESTONE_PHASES, MILESTONE_PERIODS } from './constan
 import type { StationRecord } from './types';
 import { useToolGanttSync, getToolGanttWebhookUrl } from '../../hooks/useToolGanttSync';
 import { useToolGanttStore } from '../../hooks/useToolGanttStore';
+import { useReadinessFlush } from '../../hooks/useReadinessRemote';
 
 /* ── Error boundary: catches GanttTable render crashes ── */
 interface EBState { error: string | null }
@@ -61,6 +62,7 @@ function showSyncError(msgApi: MsgApi, rawMsg: string) {
 
 /* ── Component ── */
 const ToolGanttTab: React.FC = () => {
+  useReadinessFlush();
   const { stations, source, setStations, completedElements, toggleElement, notes, setNote } = useToolGanttStore();
 
   const [deadline, setDeadline] = useState<string>(DEFAULT_DEADLINE);

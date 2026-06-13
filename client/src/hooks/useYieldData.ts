@@ -93,6 +93,7 @@ function normalizeRecord(raw: StoredRecord): YieldRecord {
     materialLot: raw.materialLot ? String(raw.materialLot) : undefined,
     woNo: raw.woNo ? String(raw.woNo) : undefined,
     reworkCount: raw.reworkCount != null ? toNonNegativeInteger(raw.reworkCount) : undefined,
+    source: raw.source === 'sharepoint' ? 'sharepoint' : 'manual',
   };
 }
 
@@ -120,6 +121,7 @@ interface YieldStore {
   updateRecord: (id: string, updates: Partial<Omit<YieldRecord, 'id'>>) => void;
   deleteRecord: (id: string) => void;
   replaceRecords: (records: Array<Partial<YieldRecord>>) => void;
+  replaceSharePointRecords: (records: Array<Partial<YieldRecord>>) => void;
   setFilter: (filter: Partial<FilterState>) => void;
   clearFilter: () => void;
   filteredRecords: () => YieldRecord[];
@@ -159,6 +161,16 @@ export const useYieldStore = create<YieldStore>((set, get) => {
 
     replaceRecords: (incoming) => {
       const records = incoming.map((r) => normalizeRecord(r as StoredRecord));
+      saveToStorage(records);
+      set({ records, lastUpdatedAt: bumpUpdatedAt() });
+    },
+
+    replaceSharePointRecords: (incoming) => {
+      const spRecords = incoming.map((r) =>
+        normalizeRecord({ ...(r as StoredRecord), source: 'sharepoint' }),
+      );
+      const manualRecords = get().records.filter((r) => r.source !== 'sharepoint');
+      const records = [...manualRecords, ...spRecords];
       saveToStorage(records);
       set({ records, lastUpdatedAt: bumpUpdatedAt() });
     },

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StationRecord } from './types';
 import { MILESTONE_PHASES, MILESTONE_PERIODS } from './constants';
+import type { ElementStatus } from '../../hooks/useToolGanttStore';
 
 /* ── Constants ── */
 const DAY = 86_400_000;
@@ -113,7 +114,7 @@ interface EditBar {
 interface Props {
   stations: StationRecord[];
   deadline: string;
-  completedElements: Set<string>;
+  completedElements: Record<string, ElementStatus>;
   onToggleElement: (key: string) => void;
   notes: Record<string, string>;
   onSetNote: (key: string, text: string) => void;
@@ -352,7 +353,7 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                         : '';
 
                       const barElemKey = `${s.station}|bar|${pi}`;
-                      const barDone = completedElements.has(barElemKey);
+                      const barDone = barElemKey in completedElements;
                       const barNote = notes[barElemKey] ?? '';
                       const tipDetail = barNote || criteria;
 
@@ -398,7 +399,7 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                         ((d.getTime() - wStart.getTime()) / (7 * DAY)) * 100;
 
                       const msElemKey = `${s.station}|ms|${phase.key}`;
-                      const msDone = completedElements.has(msElemKey);
+                      const msDone = msElemKey in completedElements;
 
                       elems.push(
                         <div
@@ -471,7 +472,7 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: '.7rem', color: '#374151', cursor: 'pointer', userSelect: 'none' }}>
             <input
               type="checkbox"
-              checked={completedElements.has(editBar.key)}
+              checked={editBar.key in completedElements}
               onChange={() => onToggleElement(editBar.key)}
               style={{ accentColor: '#10B981', width: 14, height: 14 }}
             />

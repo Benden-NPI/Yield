@@ -1,5 +1,5 @@
 export const APP_NAME = 'Yield';
-export const APP_VERSION = 'v1.11.4';
+export const APP_VERSION = 'v1.12.0';
 
 export type Shift = 'A' | 'B' | 'C';
 
@@ -22,6 +22,7 @@ export interface YieldRecord {
   materialLot?: string;
   woNo?: string;
   reworkCount?: number;
+  source?: 'manual' | 'sharepoint';
 }
 
 export type YieldMetric = 'leakage' | 'flatness' | 'pressureDrop' | 'ttv';
