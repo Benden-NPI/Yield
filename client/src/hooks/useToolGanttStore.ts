@@ -43,24 +43,53 @@ function saveStations(stations: StationRecord[] | null, source: string): void {
 /* ── Completed elements ── */
 const ELEMENTS_KEY = 'tool_gantt_completed_elements';
 
+const BAR_IDX_MAP: Record<string, string> = {
+  '|bar|0': '|bar|moveIn-setupDone',
+  '|bar|1': '|bar|setupDone-tuningDone',
+  '|bar|2': '|bar|tuningDone-qualifyDone',
+};
+
+function migrateBarKeys(m: Record<string, ElementStatus>): { result: Record<string, ElementStatus>; changed: boolean } {
+  const out: Record<string, ElementStatus> = {};
+  let changed = false;
+  for (const [key, val] of Object.entries(m)) {
+    let newKey = key;
+    for (const [old, replacement] of Object.entries(BAR_IDX_MAP)) {
+      if (key.endsWith(old)) {
+        newKey = key.slice(0, -old.length) + replacement;
+        changed = true;
+        break;
+      }
+    }
+    out[newKey] = val;
+  }
+  return { result: out, changed };
+}
+
 function loadElements(): Record<string, ElementStatus> {
   try {
     const raw = localStorage.getItem(ELEMENTS_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
+    let base: Record<string, ElementStatus>;
     // Migration: v1.11 stored string[] — upgrade to Record<string, ElementStatus>
     if (Array.isArray(parsed)) {
       const now = new Date().toISOString();
-      const migrated: Record<string, ElementStatus> = {};
+      base = {};
       for (const key of parsed as string[]) {
-        migrated[key] = { completedAt: now };
+        base[key] = { completedAt: now };
       }
-      return migrated;
+    } else if (typeof parsed === 'object' && parsed !== null) {
+      base = parsed as Record<string, ElementStatus>;
+    } else {
+      return {};
     }
-    if (typeof parsed === 'object' && parsed !== null) {
-      return parsed as Record<string, ElementStatus>;
+    // Migration: v1.12.0 bar|0 → bar|fromKey-toKey
+    const { result, changed } = migrateBarKeys(base);
+    if (changed) {
+      try { localStorage.setItem(ELEMENTS_KEY, JSON.stringify(result)); } catch {}
     }
-    return {};
+    return result;
   } catch { return {}; }
 }
 

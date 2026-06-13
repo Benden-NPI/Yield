@@ -18,18 +18,38 @@ import { APP_NAME, APP_VERSION } from './types/yield';
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 
+const VALID_TABS = ['overview', 'reports', 'entry', 'alerts', 'analytics', 'settings', 'toolgantt'];
+
 const App: React.FC = () => {
   const lastUpdatedAt = useYieldStore((s) => s.lastUpdatedAt);
-  const [activeTab, setActiveTab] = React.useState('overview');
+  const [activeTab, setActiveTab] = React.useState(() => {
+    const hash = window.location.hash.slice(1);
+    return VALID_TABS.includes(hash) ? hash : 'overview';
+  });
+
+  const handleTabChange = React.useCallback((key: string) => {
+    setActiveTab(key);
+    window.location.hash = key;
+  }, []);
 
   // Allow child components (e.g. ToolGanttTab empty state) to navigate to a tab
   React.useEffect(() => {
     const handler = (e: Event) => {
       const key = (e as CustomEvent<string>).detail;
-      if (key) setActiveTab(key);
+      if (key) handleTabChange(key);
     };
     window.addEventListener('yield-nav', handler);
     return () => window.removeEventListener('yield-nav', handler);
+  }, [handleTabChange]);
+
+  // Sync back/forward browser navigation
+  React.useEffect(() => {
+    const onHash = () => {
+      const hash = window.location.hash.slice(1);
+      if (VALID_TABS.includes(hash)) setActiveTab(hash);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   const items = [
@@ -82,7 +102,7 @@ const App: React.FC = () => {
         <Content style={{ padding: '20px', maxWidth: 1500, margin: '0 auto', width: '100%' }}>
           <Tabs
             activeKey={activeTab}
-            onChange={setActiveTab}
+            onChange={handleTabChange}
             items={items}
             size="large"
             tabBarStyle={{

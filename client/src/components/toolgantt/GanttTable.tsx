@@ -264,12 +264,28 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
 
               /* ── Station row ── */
               const { station: s } = row;
+              const phaseDone = MILESTONE_PHASES.map(
+                (p) => `${s.station}|ms|${p.key}` in completedElements,
+              );
+              const hasInconsistency = phaseDone.some(
+                (done, i) => done && i > 0 && !phaseDone[i - 1],
+              );
 
               return (
                 <tr key={s.station}>
                   {/* Left sticky cell */}
                   <td style={tdStationStyle}>
-                    <div style={stationNameStyle}>{s.station}</div>
+                    <div style={stationNameStyle}>
+                      {s.station}
+                      {hasInconsistency && (
+                        <span
+                          title="完成標記順序異常：有前置階段尚未完成"
+                          style={{ color: '#F59E0B', marginLeft: 4, fontSize: '.72rem' }}
+                        >
+                          ⚠
+                        </span>
+                      )}
+                    </div>
                     {s.processStep && (
                       <div style={processStepStyle}>{s.processStep}</div>
                     )}
@@ -321,7 +337,7 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                     }
 
                     /* Period bars (setup / tuning / qualify) */
-                    MILESTONE_PERIODS.forEach((period, pi) => {
+                    MILESTONE_PERIODS.forEach((period) => {
                       const dA = s[period.fromKey]
                         ? new Date(s[period.fromKey]!)
                         : null;
@@ -352,14 +368,19 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                         ? s[period.criteriaKey] || ''
                         : '';
 
-                      const barElemKey = `${s.station}|bar|${pi}`;
+                      const barElemKey = `${s.station}|bar|${period.fromKey}-${period.toKey}`;
                       const barDone = barElemKey in completedElements;
+                      const isBarLate = !barDone && dB < today;
                       const barNote = notes[barElemKey] ?? '';
-                      const tipDetail = barNote || criteria;
+                      const tipDetail = barNote
+                        ? barNote
+                        : isBarLate
+                          ? `${criteria ? criteria + ' ▪ ' : ''}⚠ Period end passed`
+                          : criteria;
 
                       elems.push(
                         <div
-                          key={`bar-${pi}`}
+                          key={`bar-${period.fromKey}`}
                           style={{
                             ...phaseBarStyle,
                             left: `${barL}%`,
@@ -367,7 +388,11 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                             background: barDone ? '#B0B7C3' : period.color,
                             opacity: barDone ? 0.35 : 0.65,
                             cursor: 'pointer',
-                            outline: barNote ? '1.5px solid rgba(255,255,255,0.75)' : 'none',
+                            outline: barNote
+                              ? '1.5px solid rgba(255,255,255,0.75)'
+                              : isBarLate
+                                ? '1.5px solid #EF4444'
+                                : 'none',
                             outlineOffset: '-1px',
                           }}
                           onClick={(e) => {
@@ -400,6 +425,10 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
 
                       const msElemKey = `${s.station}|ms|${phase.key}`;
                       const msDone = msElemKey in completedElements;
+                      const isLate = !msDone && d < today;
+                      const slipDays = isLate
+                        ? Math.round((today.getTime() - d.getTime()) / DAY)
+                        : 0;
 
                       elems.push(
                         <div
@@ -409,11 +438,17 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                             left: `${pct}%`,
                             background: msDone ? '#C4C4C4' : phase.dot,
                             cursor: 'pointer',
+                            outline: isLate ? '2px solid #EF4444' : 'none',
+                            outlineOffset: '2px',
                           }}
                           onClick={(e) => { e.stopPropagation(); onToggleElement(msElemKey); }}
                           data-tip-type="milestone"
                           data-tip-title={phase.label}
-                          data-tip-detail={fmtDate(d)}
+                          data-tip-detail={
+                            isLate
+                              ? `Planned: ${fmtDate(d)} ▪ ⚠ Slipped ${slipDays} days`
+                              : fmtDate(d)
+                          }
                         />,
                       );
                     });

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, Component } from 'react';
+import React, { useCallback, useMemo, useRef, useState, Component } from 'react';
 import {
   Button, Space, DatePicker, Tooltip, message, Divider, Popconfirm, Typography,
 } from 'antd';
@@ -81,6 +81,32 @@ const ToolGanttTab: React.FC = () => {
     useToolGanttSync(handleSpData);
 
   const hasUrl = !!getToolGanttWebhookUrl();
+
+  /* ── Progress summary ── */
+  const summary = useMemo(() => {
+    if (!stations || stations.length === 0) return null;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const sevenStr = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d.toISOString().slice(0, 10);
+    })();
+    let qualifyTotal = 0, qualifyDone = 0, overdueCount = 0, dueSoonCount = 0;
+    for (const s of stations) {
+      if (s.qualifyDone) {
+        qualifyTotal++;
+        if (`${s.station}|ms|qualifyDone` in completedElements) qualifyDone++;
+      }
+      for (const phase of MILESTONE_PHASES) {
+        const d = s[phase.key as keyof typeof s] as string | null;
+        if (!d) continue;
+        const k = `${s.station}|ms|${phase.key}`;
+        if (d < todayStr && !(k in completedElements)) overdueCount++;
+        else if (d >= todayStr && d <= sevenStr && !(k in completedElements)) dueSoonCount++;
+      }
+    }
+    return { qualifyTotal, qualifyDone, overdueCount, dueSoonCount };
+  }, [stations, completedElements]);
 
   /* ── Screenshot ── */
   const takeScreenshot = useCallback(async () => {
@@ -333,6 +359,25 @@ const ToolGanttTab: React.FC = () => {
             border: '1px solid #E5E7EB',
           }}
         >
+          {/* Summary strip */}
+          {summary && (
+            <div style={summaryStripStyle}>
+              <span>
+                ✓ Qualified: <strong>{summary.qualifyDone}</strong>/{summary.qualifyTotal}
+              </span>
+              {summary.overdueCount > 0 && (
+                <span style={{ color: '#EF4444' }}>
+                  ▪ ⚠ {summary.overdueCount} overdue
+                </span>
+              )}
+              {summary.dueSoonCount > 0 && (
+                <span style={{ color: '#D97706' }}>
+                  ▪ {summary.dueSoonCount} due within 7 days
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Legend row 1: milestones + ref lines */}
           <div style={legendRowStyle}>
             {MILESTONE_PHASES.map(p => (
@@ -479,4 +524,17 @@ const legItemStyle: React.CSSProperties = {
   alignItems: 'center',
   gap: 5,
   whiteSpace: 'nowrap',
+};
+
+const summaryStripStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 12,
+  fontSize: '.72rem',
+  color: '#374151',
+  background: '#F8FAFC',
+  border: '1px solid #E5E7EB',
+  borderRadius: 5,
+  padding: '5px 10px',
+  marginBottom: 8,
+  flexWrap: 'wrap',
 };
