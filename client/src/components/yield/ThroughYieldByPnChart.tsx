@@ -63,7 +63,7 @@ export const ThroughYieldByPnChart: React.FC = () => {
                 <LabelList
                   dataKey={pn}
                   position="top"
-                  formatter={(v: unknown) => (v != null && v !== '' ? `${v}%` : '')}
+                  formatter={(v: unknown) => (v != null && v !== '' ? `${Math.round(Number(v))}%` : '')}
                   style={{ fontSize: 11, fill: '#555' }}
                 />
                 <LabelList
