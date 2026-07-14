@@ -262,7 +262,7 @@ export function mapStationRows(rows: SPRow[]): StationRecord[] {
     })
     .filter((r): r is StationRecord => r !== null);
 
-  const TYPE_ORDER: Record<string, number> = { coldplate: 0, base: 1, loop: 2 };
+  const TYPE_ORDER: Record<string, number> = { base: 0, coldplate: 1, loop: 2 };
   return stations.sort((a, b) => {
     const od = (TYPE_ORDER[a.stationType] ?? 9) - (TYPE_ORDER[b.stationType] ?? 9);
     if (od !== 0) return od;
