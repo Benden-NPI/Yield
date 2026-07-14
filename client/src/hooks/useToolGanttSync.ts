@@ -187,9 +187,11 @@ function parseDate(val: unknown): string | null {
  * Returns null for non-matching names (Source, IQC, REL Lab, offline, etc.)
  * so they are filtered out of the Gantt.
  */
-function parseStationInfo(station: string): { stationType: 'coldplate' | 'loop'; stationNo: number } | null {
+function parseStationInfo(station: string): { stationType: 'coldplate' | 'base' | 'loop'; stationNo: number } | null {
   const cp = /ColdPlate\s*(\d+)/i.exec(station);
   if (cp) return { stationType: 'coldplate', stationNo: parseInt(cp[1]) };
+  const base = /Base\s*(\d+)/i.exec(station);
+  if (base) return { stationType: 'base', stationNo: parseInt(base[1]) };
   const asm = /Assembly\s*(\d+)/i.exec(station);
   if (asm) return { stationType: 'loop', stationNo: parseInt(asm[1]) };
   return null; // Unrecognised station (Source, IQC, REL Lab, offline …) → skip
@@ -260,10 +262,10 @@ export function mapStationRows(rows: SPRow[]): StationRecord[] {
     })
     .filter((r): r is StationRecord => r !== null);
 
-  // Sort: ColdPlate (ascending) → Loop (ascending)
+  const TYPE_ORDER: Record<string, number> = { coldplate: 0, base: 1, loop: 2 };
   return stations.sort((a, b) => {
-    if (a.stationType !== b.stationType)
-      return a.stationType === 'coldplate' ? -1 : 1;
+    const od = (TYPE_ORDER[a.stationType] ?? 9) - (TYPE_ORDER[b.stationType] ?? 9);
+    if (od !== 0) return od;
     return a.stationNo - b.stationNo;
   });
 }

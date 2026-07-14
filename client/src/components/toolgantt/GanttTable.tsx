@@ -182,7 +182,9 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
         result.push({
           kind: 'separator',
           label:
-            s.stationType === 'coldplate' ? 'ColdPlate' : 'Loop (Assembly)',
+            s.stationType === 'coldplate' ? 'ColdPlate'
+            : s.stationType === 'base' ? 'Base'
+            : 'Loop (Assembly)',
         });
       }
       result.push({ kind: 'station', station: s });

@@ -1,6 +1,6 @@
 export interface StationRecord {
   station: string;           // "ColdPlate 4" | "Assembly 3"
-  stationType: 'coldplate' | 'loop';
+  stationType: 'coldplate' | 'base' | 'loop';
   stationNo: number;         // numeric sort key
   processStep: string;
   moveIn: string | null;     // yyyy-mm-dd
