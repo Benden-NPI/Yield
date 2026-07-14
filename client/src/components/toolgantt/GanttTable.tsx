@@ -81,6 +81,12 @@ function computeRange(stations: StationRecord[]) {
   return { weeks, months: buildMonths(start, end, weeks) };
 }
 
+function fmtInt(s: string): string {
+  if (!s) return '';
+  const n = parseFloat(s.replace(/,/g, ''));
+  return isNaN(n) ? s : Math.round(n).toLocaleString();
+}
+
 function fmtDate(d: string | Date): string {
   const dt = typeof d === 'string' ? new Date(d) : d;
   return `${dt.getFullYear()}/${dt.getMonth() + 1}/${dt.getDate()}`;
@@ -295,7 +301,7 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
 
                   {/* Capacity cells */}
                   <td style={tdOwnerStyle}>{s.uph}</td>
-                  <td style={tdOwnerStyle}>{s.capacity}</td>
+                  <td style={tdOwnerStyle}>{fmtInt(s.capacity)}</td>
                   <td style={tdOwnerStyle}>{s.efficiency}</td>
 
                   {/* Gantt cells */}
