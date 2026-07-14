@@ -87,6 +87,15 @@ function fmtInt(s: string): string {
   return isNaN(n) ? s : Math.round(n).toLocaleString();
 }
 
+function fmtPct(s: string): string {
+  if (!s) return '';
+  const n = parseFloat(s.replace('%', '').replace(/,/g, '').trim());
+  if (isNaN(n)) return s;
+  // SharePoint percentage columns return 0-1 decimals; plain number columns return e.g. 85
+  const pct = n <= 1.5 ? Math.round(n * 100) : Math.round(n);
+  return `${pct}%`;
+}
+
 function fmtDate(d: string | Date): string {
   const dt = typeof d === 'string' ? new Date(d) : d;
   return `${dt.getFullYear()}/${dt.getMonth() + 1}/${dt.getDate()}`;
@@ -302,7 +311,7 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                   {/* Capacity cells */}
                   <td style={tdOwnerStyle}>{s.uph}</td>
                   <td style={tdOwnerStyle}>{fmtInt(s.capacity)}</td>
-                  <td style={tdOwnerStyle}>{s.efficiency}</td>
+                  <td style={tdOwnerStyle}>{fmtPct(s.efficiency)}</td>
 
                   {/* Gantt cells */}
                   {weeks.map((wStart, wi) => {
