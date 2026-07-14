@@ -233,16 +233,9 @@ export function mapStationRows(rows: SPRow[]): StationRecord[] {
         'Qualify Completed', 'Qualify', 'QualifyDone',
       ]);
       const qCritVal         = pickKey(row, ['Qualify Criteria', 'QualifyCriteria']);
-      const surveyToolVal    = pickKey(row, [
-        'Owner - Survey Tool', 'Owner-Survey Tool', 'Survey Tool Owner',
-        'OwnerSurveyTool', 'Survey Tool', 'SurveyTool',
-      ]);
-      const eeVal            = pickKey(row, [
-        'Owner - EE', 'Owner-EE', 'EE Owner', 'OwnerEE', 'EE',
-      ]);
-      const npiVal           = pickKey(row, [
-        'Owner - NPI', 'Owner-NPI', 'NPI Owner', 'OwnerNPI', 'NPI',
-      ]);
+      const uphVal        = pickKey(row, ['UPH', 'Uph', 'uph']);
+      const capacityVal   = pickKey(row, ['Capacity', 'Cap', 'capacity']);
+      const efficiencyVal = pickKey(row, ['Efficiency', 'Eff', 'efficiency', 'Efficiency%', 'Eff%']);
 
       return {
         station,
@@ -255,9 +248,9 @@ export function mapStationRows(rows: SPRow[]): StationRecord[] {
         qualifyDone:     parseDate(qualifyVal),
         tuningCriteria:  tCritVal       != null ? String(tCritVal).trim()       : '',
         qualifyCriteria: qCritVal       != null ? String(qCritVal).trim()       : '',
-        ownerSurveyTool: surveyToolVal  != null ? String(surveyToolVal).trim()  : '',
-        ownerEE:         eeVal          != null ? String(eeVal).trim()          : '',
-        ownerNPI:        npiVal         != null ? String(npiVal).trim()         : '',
+        uph:        uphVal        != null ? String(uphVal).trim()        : '',
+        capacity:   capacityVal   != null ? String(capacityVal).trim()   : '',
+        efficiency: efficiencyVal != null ? String(efficiencyVal).trim() : '',
       };
     })
     .filter((r): r is StationRecord => r !== null);
@@ -323,20 +316,6 @@ export function useToolGanttSync(
         console.info('[ToolGanttSync] first row keys:', allKeys);
         console.info('[ToolGanttSync] first row sample:', JSON.stringify(rows[0]).slice(0, 500));
 
-        // Debug owner columns: show which keys matched and what values were found
-        const ownerCandidates = {
-          'Owner-SurveyTool': ['Owner - Survey Tool','Owner-Survey Tool','Survey Tool Owner','OwnerSurveyTool','Survey Tool','SurveyTool'],
-          'Owner-EE':         ['Owner - EE','Owner-EE','EE Owner','OwnerEE','EE'],
-          'Owner-NPI':        ['Owner - NPI','Owner-NPI','NPI Owner','OwnerNPI','NPI'],
-        };
-        for (const [label, cands] of Object.entries(ownerCandidates)) {
-          const wanted = cands.map(normKey);
-          const matched = allKeys.filter(k => wanted.includes(normKey(k)));
-          const sampleVal = matched.length > 0
-            ? String((rows[0] as Record<string,unknown>)[matched[0]] ?? '(empty)')
-            : '(no match)';
-          console.info(`[ToolGanttSync] ${label}: matched key=${matched[0] ?? 'none'}, sample="${sampleVal}"`);
-        }
       } else {
         console.warn('[ToolGanttSync] Power Automate returned 0 rows');
       }

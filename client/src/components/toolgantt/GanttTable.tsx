@@ -203,9 +203,9 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
               <th style={thStationStyle} rowSpan={2}>
                 Station / Process
               </th>
-              <th style={thOwnerStyle} rowSpan={2}>Survey<br />Tool</th>
-              <th style={thOwnerStyle} rowSpan={2}>EE</th>
-              <th style={thOwnerStyle} rowSpan={2}>NPI</th>
+              <th style={thOwnerStyle} rowSpan={2}>UPH</th>
+              <th style={thOwnerStyle} rowSpan={2}>Cap.</th>
+              <th style={thOwnerStyle} rowSpan={2}>Eff.</th>
               {months.map((m, i) => (
                 <th key={i} colSpan={m.span} style={thMonthStyle}>
                   {m.label}
@@ -293,10 +293,10 @@ const GanttTable: React.FC<Props> = ({ stations, deadline, completedElements, on
                     )}
                   </td>
 
-                  {/* Owner cells */}
-                  <td style={tdOwnerStyle}>{s.ownerSurveyTool}</td>
-                  <td style={tdOwnerStyle}>{s.ownerEE}</td>
-                  <td style={tdOwnerStyle}>{s.ownerNPI}</td>
+                  {/* Capacity cells */}
+                  <td style={tdOwnerStyle}>{s.uph}</td>
+                  <td style={tdOwnerStyle}>{s.capacity}</td>
+                  <td style={tdOwnerStyle}>{s.efficiency}</td>
 
                   {/* Gantt cells */}
                   {weeks.map((wStart, wi) => {
